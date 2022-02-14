@@ -227,7 +227,7 @@ controleFluxo:
     ;
 
 goto:
-    KW_GOTO exprAritmetica
+    KW_GOTO TK_IDENTIFIER
     ;
 
 if:

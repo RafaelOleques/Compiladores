@@ -13,6 +13,7 @@ void openFile(int argc, char **argv)
     if (yyin == 0)
     {
         printf("Erro ao abrir o arquivo!\n");
+        exit(1);
     }
 }
 
