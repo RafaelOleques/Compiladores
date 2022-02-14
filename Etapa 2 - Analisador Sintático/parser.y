@@ -167,17 +167,12 @@ return:
     Expressao Aritmetica
 */
 exprAritmetica:
-    expressaoAritmetica
-    | expressaoFolha
+    expressaoFolha
     | chamadaFuncao
     | KW_READ
-    ;
-
-expressaoAritmetica:
-    expressaoFolha
-    | '(' expressaoAritmetica ')'
-    | expressaoAritmetica operador expressaoAritmetica
-    ;
+    | '(' exprAritmetica ')'
+    | exprAritmetica operador exprAritmetica
+    ;    
 
 chamadaFuncao:
     TK_IDENTIFIER '(' chamadaParametrosEntrada ')'
@@ -194,10 +189,7 @@ chamadaParametroEntrada:
     ;
 
 parametroFuncao:
-    TK_IDENTIFIER
-    | LIT_CHAR
-    | LIT_INTEGER
-    | LIT_STRING
+    exprAritmetica
     ;
 
 operador:
