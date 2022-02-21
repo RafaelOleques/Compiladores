@@ -1,3 +1,7 @@
+%{
+    int yyerror(char*);
+%}
+
 %token KW_CHAR
 %token KW_INT
 %token KW_FLOAT
@@ -41,14 +45,17 @@ decl:
 */
 
 declaracaoVariavel:
-    tipoIntChar TK_IDENTIFIER ':' inicializacao
+    KW_INT TK_IDENTIFIER ':' inicializacao
+    | KW_CHAR TK_IDENTIFIER ':' inicializacao
     | KW_FLOAT TK_IDENTIFIER ':' LIT_INTEGER '/' LIT_INTEGER 
     | declaracaoVetor
     ;
 
 declaracaoVetor:
-    tipoIntChar TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor
-    | tipoIntChar TK_IDENTIFIER '[' LIT_INTEGER ']'
+    KW_INT TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor
+    | KW_CHAR TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor
+    | KW_INT TK_IDENTIFIER '[' LIT_INTEGER ']'
+    | KW_CHAR TK_IDENTIFIER '[' LIT_INTEGER ']'
     | KW_FLOAT TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor
     | KW_FLOAT TK_IDENTIFIER '[' LIT_INTEGER ']'
     ;
@@ -63,24 +70,16 @@ inicializacao:
     | LIT_CHAR;
 
 /*
-    Tipos
-*/
-
-tipoIntChar:
-    KW_INT
-    | KW_CHAR
-    ;
-
-/*
     Funções
 */
 
 declaracaoFuncao:
-    cabecalhoFuncao corpoFuncao
+    cabecalhoFuncao comando
     ;
 
 cabecalhoFuncao:
-    tipoIntChar TK_IDENTIFIER '(' parametrosEntrada ')'
+    KW_INT TK_IDENTIFIER '(' parametrosEntrada ')'
+    | KW_CHAR TK_IDENTIFIER '(' parametrosEntrada ')'
     | KW_FLOAT TK_IDENTIFIER '(' parametrosEntrada ')'
     ;
 
@@ -90,15 +89,12 @@ parametrosEntrada:
     ;
 
 parametroEntrada:
-    tipoIntChar TK_IDENTIFIER ',' parametroEntrada
-    | tipoIntChar TK_IDENTIFIER
+    KW_INT TK_IDENTIFIER ',' parametroEntrada
+    | KW_CHAR TK_IDENTIFIER ',' parametroEntrada
+    | KW_INT TK_IDENTIFIER
+    | KW_CHAR TK_IDENTIFIER
     | KW_FLOAT TK_IDENTIFIER ',' parametroEntrada
     | KW_FLOAT TK_IDENTIFIER
-    ;
-
-corpoFuncao:
-    comando
-    | bloco
     ;
 
 /*
@@ -106,12 +102,7 @@ corpoFuncao:
 */
 
 bloco:
-    '{' comandosBloco '}'
-    ;
-
-comandosBloco:
-    comandoBloco
-    | 
+    '{' comandoBloco '}'
     ;
 
 comandoBloco:
@@ -119,10 +110,12 @@ comandoBloco:
     | comando ';'
     | label comandoBloco
     | label
+    |
     ;
 
 comando:
     comandoSimples
+    | bloco
     ;
 
 comandoSimples:
@@ -184,12 +177,8 @@ chamadaParametrosEntrada:
     ;
 
 chamadaParametroEntrada:
-    parametroFuncao ',' chamadaParametroEntrada
-    | parametroFuncao
-    ;
-
-parametroFuncao:
-    exprAritmetica
+    exprAritmetica ',' chamadaParametroEntrada
+    | exprAritmetica
     ;
 
 operador:
@@ -231,17 +220,12 @@ goto:
     ;
 
 if:
-    KW_IF exprAritmetica KW_THEN comandoFluxo
-    | KW_IF exprAritmetica KW_THEN comandoFluxo KW_ELSE comandoFluxo
+    KW_IF exprAritmetica KW_THEN comando
+    | KW_IF exprAritmetica KW_THEN comando KW_ELSE comando
     ;
 
 while:
-    KW_WHILE exprAritmetica comandoFluxo
-    ;
-
-comandoFluxo:
-    bloco
-    | comandoSimples
+    KW_WHILE exprAritmetica comando
     ;
 
 %%
