@@ -1,5 +1,16 @@
 // Autor: Rafael Oleques Nunes
 
+#include<stdio.h>
+#include"hash.h"
+#include "descompilador.c"
+
+extern FILE *yyin;
+int yyparser();
+void initMe();
+int yyparse();
+int getLineNumber();
+AST * program_ast;
+
 void openFile(int argc, char **argv)
 {
     if (argc < 2)
@@ -26,6 +37,12 @@ int main(int argc, char *argv[])
     initMe();
 
     yyparse();
+
+    astPrint(program_ast, 0);
+
+    descompila(program_ast, argv[2]);
+
+    //descompila(arvore, arquivo); gera um programa equivalente
 
     printf("\n");
     printf("Main encerrada corretamente!\n");

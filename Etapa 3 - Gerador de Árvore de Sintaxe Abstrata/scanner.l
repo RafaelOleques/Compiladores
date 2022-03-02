@@ -2,6 +2,7 @@
     //Autor: Rafael Oleques Nunes
 
     #include "hash.h"
+    #include "ast.h"
     #include "parser.tab.h"
 
     #define TRUE 1
@@ -92,7 +93,3 @@ int getLineNumber(void)
 {
     return countLines;
 }
-
-#include "parser.tab.c"
-#include "hash.c"
-#include "main.c"
