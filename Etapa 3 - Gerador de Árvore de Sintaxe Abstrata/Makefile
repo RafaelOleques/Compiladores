@@ -23,7 +23,4 @@ lex.yy.c: scanner.l
 	flex scanner.l
 
 clean:
-	del /f lex.yy.c 
-	del /f parser.tab.c 
-	del /f *.o 
-	del /f etapa3.exe
+	rm lex.yy.c parser.tab.c *.o etapa3

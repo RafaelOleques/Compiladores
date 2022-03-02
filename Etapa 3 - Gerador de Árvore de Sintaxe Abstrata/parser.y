@@ -122,17 +122,17 @@ declaracaoVariavel:
     ;
 
 declaracaoVetor:
-    KW_INT TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor       {$$ = astCreate(AST_declaracaoVetorInt, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), $7, 0, 0);}
+    KW_INT TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor       {$$ = astCreate(AST_declaracaoVetorIntValores, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), $7, 0, 0);}
     | KW_INT TK_IDENTIFIER '[' LIT_INTEGER ']'                      {$$ = astCreate(AST_declaracaoVetorInt, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), 0, 0, 0);}
-    | KW_CHAR TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor    {$$ = astCreate(AST_declaracaoVetorChar, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), $7, 0, 0);}
+    | KW_CHAR TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor    {$$ = astCreate(AST_declaracaoVetorCharValores, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), $7, 0, 0);}
     | KW_CHAR TK_IDENTIFIER '[' LIT_INTEGER ']'                     {$$ = astCreate(AST_declaracaoVetorChar, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), 0, 0, 0);}
-    | KW_FLOAT TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor   {$$ = astCreate(AST_declaracaoVetorFloat, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), $7, 0, 0);}
+    | KW_FLOAT TK_IDENTIFIER '[' LIT_INTEGER ']' ':' valoresVetor   {$$ = astCreate(AST_declaracaoVetorFloatValores, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), $7, 0, 0);}
     | KW_FLOAT TK_IDENTIFIER '[' LIT_INTEGER ']'                    {$$ = astCreate(AST_declaracaoVetorFloat, $2, astCreate(AST_tamVetor, $4, 0, 0, 0, 0), 0, 0, 0);}
     ;
 
 valoresVetor:
     inicializacao                   {$$ = astCreate(AST_valoresVetor, 0, $1, 0, 0, 0);}
-    | inicializacao valoresVetor    {$$ = astCreate(AST_valoresVetor, 0, $1, $2, 0, 0);}
+    | inicializacao valoresVetor    {$$ = astCreate(AST_valoresVetorMultiplo, 0, $1, $2, 0, 0);}
     ;
 
 inicializacao:
@@ -160,11 +160,11 @@ parametrosEntrada:
     ;
 
 parametroEntrada:
-    KW_INT TK_IDENTIFIER ',' parametroEntrada       {$$ = astCreate(AST_parametroEntradaInt, $2, $4, 0, 0, 0);}
-    | KW_CHAR TK_IDENTIFIER ',' parametroEntrada    {$$ = astCreate(AST_parametroEntradaChar, $2, $4, 0, 0, 0);}
+    KW_INT TK_IDENTIFIER ',' parametroEntrada       {$$ = astCreate(AST_parametroEntradaIntMultiplo, $2, $4, 0, 0, 0);}
+    | KW_CHAR TK_IDENTIFIER ',' parametroEntrada    {$$ = astCreate(AST_parametroEntradaCharMultiplo, $2, $4, 0, 0, 0);}
     | KW_INT TK_IDENTIFIER                          {$$ = astCreate(AST_parametroEntradaInt, $2, 0, 0, 0, 0);}
     | KW_CHAR TK_IDENTIFIER                         {$$ = astCreate(AST_parametroEntradaChar, $2, 0, 0, 0, 0);}
-    | KW_FLOAT TK_IDENTIFIER ',' parametroEntrada   {$$ = astCreate(AST_parametroEntradaFloat, $2, $4, 0, 0, 0);}
+    | KW_FLOAT TK_IDENTIFIER ',' parametroEntrada   {$$ = astCreate(AST_parametroEntradaFloatMultiplo, $2, $4, 0, 0, 0);}
     | KW_FLOAT TK_IDENTIFIER                        {$$ = astCreate(AST_parametroEntradaFloat, $2, 0, 0, 0, 0);}
     ;
 
@@ -239,7 +239,7 @@ exprAritmetica:
     expressaoFolha                                   
     | chamadaFuncao                                            
     | KW_READ                                       {$$ = astCreate(AST_READ, 0, 0, 0, 0, 0);}          
-    | '(' exprAritmetica ')'                        {$$ = $2}    
+    | '(' exprAritmetica ')'                        {$$ = astCreate(AST_EXPR_PARENTESES, 0, $2, 0, 0, 0);}  
     | exprAritmetica '+' exprAritmetica             {$$ = astCreate(AST_ADD, 0, $1, $3, 0, 0);}   
     | exprAritmetica '-' exprAritmetica             {$$ = astCreate(AST_SUB, 0, $1, $3, 0, 0);}     
     | exprAritmetica '*' exprAritmetica             {$$ = astCreate(AST_MULT, 0, $1, $3, 0, 0);}      
@@ -291,7 +291,7 @@ goto:
 
 if:
     KW_IF exprAritmetica KW_THEN comando                    {$$ = astCreate(AST_if, 0, $2, $4, 0, 0);}
-    | KW_IF exprAritmetica KW_THEN comando KW_ELSE comando  {$$ = astCreate(AST_if, 0, $2, $4, $6, 0);}
+    | KW_IF exprAritmetica KW_THEN comando KW_ELSE comando  {$$ = astCreate(AST_ifElse, 0, $2, $4, $6, 0);}
     ;
 
 while:

@@ -55,6 +55,15 @@
 #define AST_declaracaoVariavelFloatLiteral 46
 #define AST_decl 47
 #define AST_declPV 48
+#define AST_EXPR_PARENTESES 49
+#define AST_ifElse 50
+#define AST_parametroEntradaIntMultiplo 51
+#define AST_parametroEntradaCharMultiplo 52
+#define AST_parametroEntradaFloatMultiplo 53
+#define AST_valoresVetorMultiplo 54
+#define AST_declaracaoVetorIntValores 55
+#define AST_declaracaoVetorCharValores 56
+#define AST_declaracaoVetorFloatValores 57
 
 
 #define AST_UNKNOWN 0

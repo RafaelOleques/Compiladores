@@ -1,7 +1,8 @@
 #include "ast.h"
+#include <string.h>
 
 void descompila(AST *node, char *fileName);
-void run_descompila(AST *node, int level,  FILE *file);
+void run_descompila(AST *node, FILE *file);
 
 void descompila(AST *node, char *fileName)
 {
@@ -10,191 +11,277 @@ void descompila(AST *node, char *fileName)
     if (!file)
         perror("fopen");
 
-    if(file == NULL)
+    if (file == NULL)
     {
-		printf("Erro no arquivo de saida!");
-		exit(1);
-	}
+        printf("Erro no arquivo de saida!");
+        exit(1);
+    }
 
-    fprintf(file, "Oi, eu consegui!"); 
+    run_descompila(node, file);
 
-    //run_descompila(node, 0,  file);
-
-    fclose (file);
+    fclose(file);
 }
 
-void run_descompila(AST *node, int level,  FILE *file)
-{
-    if(node == 0)
-        return;
-    
-    int i;
-    
-    for(i = 0; i <level; i++)
-        fprintf(stderr, "  ");
+#define ELEMENTOS 8
+#define TEXTO 12
 
-    fprintf(stderr, "ast: ");
+void run_descompila(AST *node, FILE *file)
+{
+    char completar[ELEMENTOS][TEXTO];
+    int cabecote_escrita = 0, cabecote_leitura = 0;
+
+    if (node == 0)
+        return;
+
+    int i;
 
     switch (node->type)
     {
-    case AST_SYMBOL:
-        fprintf(stderr, "AST_SYMBOL");
-        break;
     case AST_ADD:
-        fprintf(stderr, "AST_ADD");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " + ");
         break;
     case AST_SUB:
-        fprintf(stderr, "AST_SUB");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " - ");
         break;
     case AST_MULT:
-        fprintf(stderr, "AST_MULT");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " * ");
         break;
     case AST_DIV:
-        fprintf(stderr, "AST_DIV");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " / ");
         break;
     case AST_LESS:
-        fprintf(stderr, "AST_LESS");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " < ");
         break;
     case AST_GREATER:
-        fprintf(stderr, "AST_GREATER");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " > ");
         break;
     case AST_LE:
-        fprintf(stderr, "AST_LE");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " <= ");
         break;
     case AST_GE:
-        fprintf(stderr, "AST_GE");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " >= ");
         break;
     case AST_EQ:
-        fprintf(stderr, "AST_EQ");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " == ");
         break;
     case AST_DIF:
-        fprintf(stderr, "AST_DIF");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " != ");
         break;
     case AST_chamadaFuncao:
-        fprintf(stderr, "AST_chamadaFuncao");
-        break;
-    case AST_chamadaParametrosEntrada:
-        fprintf(stderr, "AST_chamadaParametrosEntrada");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "(");
+        strcpy(completar[cabecote_escrita++], ")");
         break;
     case AST_chamadaParametroEntrada:
-        fprintf(stderr, "AST_chamadaParametroEntrada");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], ", ");
         break;
     case AST_READ:
-        fprintf(stderr, "AST_READ");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " read");
         break;
     case AST_atribuicao:
-        fprintf(stderr, "AST_atribuicao");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " = ");
         break;
     case AST_atribuicao_vector:
-        fprintf(stderr, "AST_atribuicao_vector");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "] = ");
         break;
     case AST_print:
-        fprintf(stderr, "AST_print");
+        strcpy(completar[cabecote_escrita++], " print ");
         break;
     case AST_printElementos:
-        fprintf(stderr, "AST_printElementos");
-        break;
-    case AST_printElemento:
-        fprintf(stderr, "AST_printElemento");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], ", ");
         break;
     case AST_return:
-        fprintf(stderr, "AST_return");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " return ");
         break;
     case AST_goto:
-        fprintf(stderr, "AST_goto");
+        strcpy(completar[cabecote_escrita++], " goto ");
         break;
     case AST_label:
-        fprintf(stderr, "AST_label");
-        break;
-    case AST_comandoBloco_label:
-        fprintf(stderr, "AST_comandoBloco_label");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], ": ");
         break;
     case AST_bloco:
-        fprintf(stderr, "AST_bloco");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "\n{\n");
+        strcpy(completar[cabecote_escrita++], "}\n");
         break;
     case AST_if:
-        fprintf(stderr, "AST_if");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " if ");
+        strcpy(completar[cabecote_escrita++], " then ");
+        break;
+    case AST_ifElse:
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " if ");
+        strcpy(completar[cabecote_escrita++], " then ");
+        strcpy(completar[cabecote_escrita++], " else ");
         break;
     case AST_while:
-        fprintf(stderr, "AST_while");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " while ");
         break;
     case AST_comandoBloco:
-        fprintf(stderr, "AST_comandoBloco");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], ";\n");
         break;
     case AST_VECTOR:
-        fprintf(stderr, "AST_VECTOR");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "]");
+        break;
+    case AST_parametroEntradaIntMultiplo:
+        strcpy(completar[cabecote_escrita++], " int ");
+        strcpy(completar[cabecote_escrita++], ", ");
+        break;
+    case AST_parametroEntradaCharMultiplo:
+        strcpy(completar[cabecote_escrita++], " char ");
+        strcpy(completar[cabecote_escrita++], ", ");
+
+        break;
+    case AST_parametroEntradaFloatMultiplo:
+        strcpy(completar[cabecote_escrita++], " float ");
+        strcpy(completar[cabecote_escrita++], ", ");
         break;
     case AST_parametroEntradaInt:
-        fprintf(stderr, "AST_parametroEntradaInt");
+        strcpy(completar[cabecote_escrita++], " int ");
         break;
     case AST_parametroEntradaChar:
-        fprintf(stderr, "AST_parametroEntradaChar");
+        strcpy(completar[cabecote_escrita++], " char ");
         break;
     case AST_parametroEntradaFloat:
-        fprintf(stderr, "AST_parametroEntradaFloat");
+        strcpy(completar[cabecote_escrita++], " float ");
         break;
     case AST_cabecalhoFuncaoInt:
-        fprintf(stderr, "AST_cabecalhoFuncaoInt");
+        strcpy(completar[cabecote_escrita++], " int ");
+        strcpy(completar[cabecote_escrita++], "(");
+        strcpy(completar[cabecote_escrita++], ")");
         break;
     case AST_cabecalhoFuncaoChar:
-        fprintf(stderr, "AST_cabecalhoFuncaoChar");
+        strcpy(completar[cabecote_escrita++], " char ");
+        strcpy(completar[cabecote_escrita++], "(");
+        strcpy(completar[cabecote_escrita++], ")");
         break;
     case AST_cabecalhoFuncaoFloat:
-        fprintf(stderr, "AST_cabecalhoFuncaoFloat");
+        strcpy(completar[cabecote_escrita++], " float ");
+        strcpy(completar[cabecote_escrita++], "(");
+        strcpy(completar[cabecote_escrita++], ")");
         break;
-    case AST_declaracaoFuncao:
-        fprintf(stderr, "AST_declaracaoFuncao");
-        break;
-    case AST_valoresVetor:
-        fprintf(stderr, "AST_valoresVetor");
+    case AST_valoresVetorMultiplo:
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], " ");
         break;
     case AST_declaracaoVetorInt:
-        fprintf(stderr, "AST_declaracaoVetorInt");
+        strcpy(completar[cabecote_escrita++], " int ");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "]");
         break;
     case AST_declaracaoVetorChar:
-        fprintf(stderr, "AST_declaracaoVetorChar");
+        strcpy(completar[cabecote_escrita++], " char ");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "]");
         break;
     case AST_declaracaoVetorFloat:
-        fprintf(stderr, "AST_declaracaoVetorFloat");
+        strcpy(completar[cabecote_escrita++], " float ");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "]");
         break;
-    case AST_tamVetor:
-        fprintf(stderr, "AST_tamVetor");
+    case AST_declaracaoVetorIntValores:
+        strcpy(completar[cabecote_escrita++], " int ");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "]: ");
         break;
-    case AST_declaracaoVariavel:
-        fprintf(stderr, "AST_declaracaoVariavel");
+    case AST_declaracaoVetorCharValores:
+        strcpy(completar[cabecote_escrita++], " char ");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "]: ");
+        break;
+    case AST_declaracaoVetorFloatValores:
+        strcpy(completar[cabecote_escrita++], " float ");
+        strcpy(completar[cabecote_escrita++], "[");
+        strcpy(completar[cabecote_escrita++], "]: ");
         break;
     case AST_declaracaoVariavelInt:
-        fprintf(stderr, "AST_declaracaoVariavelInt");
+        strcpy(completar[cabecote_escrita++], " int ");
+        strcpy(completar[cabecote_escrita++], ":");
         break;
     case AST_declaracaoVariavelChar:
-        fprintf(stderr, "AST_declaracaoVariavelChar");
+        strcpy(completar[cabecote_escrita++], "char ");
+        strcpy(completar[cabecote_escrita++], ":");
         break;
     case AST_declaracaoVariavelFloat:
-        fprintf(stderr, "AST_declaracaoVariavelFloat");
-        break;
-    case AST_declaracaoVariavelFloatLiteral:
-        fprintf(stderr, "AST_declaracaoVariavelFloatLiteral");
-        break;
-    case AST_decl:
-        fprintf(stderr, "AST_decl");
+        strcpy(completar[cabecote_escrita++], " float ");
+        strcpy(completar[cabecote_escrita++], ":");
+        strcpy(completar[cabecote_escrita++], "/");
         break;
     case AST_declPV:
-        fprintf(stderr, "AST_declPV");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], ";\n");
         break;
-    
+    case AST_EXPR_PARENTESES:
+        strcpy(completar[cabecote_escrita++], "");
+        strcpy(completar[cabecote_escrita++], "(");
+        strcpy(completar[cabecote_escrita++], ")");
+        break;
+
     default:
-        fprintf(stderr, "AST_UNKNOWN");
         break;
     }
 
-    if(node->symbol != 0)
-        fprintf(stderr, ", %s\n", node->symbol->text);
-    else
-        fprintf(stderr, ", 0\n");
-
-    
-    for(i=0;i<MAX_SONS;i++)
+    if (cabecote_leitura < cabecote_escrita)
     {
-        run_descompila(node->son[i], level+1, file);
+        fprintf(file, "%s", completar[cabecote_leitura]);
+        cabecote_leitura++;
+    }
+
+    if (node->symbol != 0)
+        fprintf(file, "%s", node->symbol->text);
+
+    for (i = 0; i < MAX_SONS; i++)
+    {
+        if (cabecote_leitura < cabecote_escrita)
+        {
+            fprintf(file, "%s", completar[cabecote_leitura]);
+            cabecote_leitura++;
+        }
+        run_descompila(node->son[i], file);
+    }
+
+    if (cabecote_leitura < cabecote_escrita)
+    {
+        fprintf(file, "%s", completar[cabecote_leitura]);
+        cabecote_leitura++;
     }
 }

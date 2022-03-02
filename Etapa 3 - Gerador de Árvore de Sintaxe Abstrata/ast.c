@@ -128,6 +128,15 @@ void astPrint(AST *node, int level)
     case AST_parametroEntradaFloat:
         fprintf(stderr, "AST_parametroEntradaFloat");
         break;
+    case AST_parametroEntradaIntMultiplo:
+        fprintf(stderr, "AST_parametroEntradaInt");
+        break;
+    case AST_parametroEntradaCharMultiplo:
+        fprintf(stderr, "AST_parametroEntradaCharMultiplo");
+        break;
+    case AST_parametroEntradaFloatMultiplo:
+        fprintf(stderr, "AST_parametroEntradaFloatMultiplo");
+        break;
     case AST_cabecalhoFuncaoInt:
         fprintf(stderr, "AST_cabecalhoFuncaoInt");
         break;
@@ -175,6 +184,24 @@ void astPrint(AST *node, int level)
         break;
     case AST_declPV:
         fprintf(stderr, "AST_declPV");
+        break;
+    case AST_EXPR_PARENTESES:
+        fprintf(stderr, "AST_EXPR_PARENTESES");
+        break;
+    case AST_ifElse:
+        fprintf(stderr, "AST_ifElse");
+        break;
+    case AST_valoresVetorMultiplo:
+        fprintf(stderr, "AST_valoresVetorMultiplo");
+        break;
+    case AST_declaracaoVetorIntValores:
+        fprintf(stderr, "AST_declaracaoVetorIntValores");
+        break;
+    case AST_declaracaoVetorCharValores:
+        fprintf(stderr, "AST_declaracaoVetorCharValores");
+        break;
+    case AST_declaracaoVetorFloatValores:
+        fprintf(stderr, "AST_declaracaoVetorFloatValores");
         break;
     
     default:
