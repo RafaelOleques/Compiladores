@@ -6,3 +6,4 @@
 *.yy.c
 *.tgz
 Etapa 3 - Gerador de Árvore de Sintaxe Abstrata/.vscode/settings.json
+*.o
