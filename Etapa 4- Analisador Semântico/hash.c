@@ -55,6 +55,32 @@ HASH_NODE *hashInsert(char *text, int type)
     return newnode;
 }
 
+void print_function_parameters(FUNCT_PARAMETERS *parameters)
+{
+    if (parameters == 0)
+        return;
+
+    printf("\t%s: ", parameters->text);
+
+    switch (parameters->datatype)
+    {
+    case DATATYPE_CHAR:
+        printf("CHAR\n");
+        break;
+    case DATATYPE_FLOAT:
+        printf("FLOAT\n");
+        break;
+    case DATATYPE_INT:
+        printf("INT\n");
+        break;
+
+    default:
+        break;
+    }
+
+    print_function_parameters(parameters->next);
+}
+
 void hashPrint(void)
 {
     int i;
@@ -62,7 +88,12 @@ void hashPrint(void)
     for (i = 0; i < HASH_SIZE; i++)
         for (node = table[i]; node; node = node->next)
         {
-            printf("Table[%d] has %s with type ", i, node->text);
+            printf("Table[%d] has %s ", i, node->text);
+            if(!node->is_context)
+                printf(" NO CONTEXT ");
+            else
+                printf(" CONTEXT ");
+            printf(" with type ");
 
             switch (node->type)
             {
@@ -88,7 +119,23 @@ void hashPrint(void)
                 printf("SYMBOL_VARIABLE");
                 break;
             case SYMBOL_FUNCTION:
-                printf("SYMBOL_FUNCTION");
+                printf("SYMBOL_FUNCTION ");
+                switch (node->datatype)
+                {
+                case DATATYPE_CHAR:
+                    printf("CHAR");
+                    break;
+                case DATATYPE_FLOAT:
+                    printf("FLOAT");
+                    break;
+                case DATATYPE_INT:
+                    printf("INT");
+                    break;
+                default:
+                    break;
+                }
+                printf(" and parameters:\n");
+                print_function_parameters(node->parameters);
                 break;
             case SYMBOL_VECTOR:
                 printf("SYMBOL_VECTOR");
@@ -100,18 +147,19 @@ void hashPrint(void)
                 printf("%d", node->type);
             }
 
-            switch (node->datatype)
-            {
-            case DATATYPE_CHAR:
-                printf(" CHAR");
-                break;
-            case DATATYPE_FLOAT:
-                printf(" FLOAT");
-                break;
-            case DATATYPE_INT:
-                printf(" INT");
-                break;
-            }
+            if (node->type != SYMBOL_FUNCTION)
+                switch (node->datatype)
+                {
+                case DATATYPE_CHAR:
+                    printf(" CHAR");
+                    break;
+                case DATATYPE_FLOAT:
+                    printf(" FLOAT");
+                    break;
+                case DATATYPE_INT:
+                    printf(" INT");
+                    break;
+                }
 
             printf("\n");
         }

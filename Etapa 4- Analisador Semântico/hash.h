@@ -30,6 +30,7 @@
 typedef struct funct_parameters
 {
     int datatype;
+    int type;
     char *text;
     struct funct_parameters *next;    
 } FUNCT_PARAMETERS;
@@ -39,6 +40,7 @@ typedef struct hash_node
     int type;
     int datatype;
     int datastruct;
+    int is_context;
     FUNCT_PARAMETERS *parameters;
     char *text;
     struct hash_node *next;    
