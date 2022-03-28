@@ -20,15 +20,26 @@
 #define SYMBOL_FUNCTION 8
 #define SYMBOL_VECTOR 9
 #define SYMBOL_LIT_FLOAT 10
+#define SYMBOL_LABLE 11
 
+#define DATATYPE_INVALID -1
 #define DATATYPE_INT 1
 #define DATATYPE_CHAR 2
 #define DATATYPE_FLOAT 3
+
+typedef struct funct_parameters
+{
+    int datatype;
+    char *text;
+    struct funct_parameters *next;    
+} FUNCT_PARAMETERS;
 
 typedef struct hash_node
 {
     int type;
     int datatype;
+    int datastruct;
+    FUNCT_PARAMETERS *parameters;
     char *text;
     struct hash_node *next;    
 } HASH_NODE;

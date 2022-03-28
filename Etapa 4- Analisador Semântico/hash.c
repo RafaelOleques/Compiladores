@@ -62,7 +62,7 @@ void hashPrint(void)
     for (i = 0; i < HASH_SIZE; i++)
         for (node = table[i]; node; node = node->next)
         {
-            printf("Table[%d] has %s with type ", i, node->text);            
+            printf("Table[%d] has %s with type ", i, node->text);
 
             switch (node->type)
             {
@@ -100,7 +100,6 @@ void hashPrint(void)
                 printf("%d", node->type);
             }
 
-            
             switch (node->datatype)
             {
             case DATATYPE_CHAR:
@@ -133,6 +132,6 @@ int hash_check_undeclared()
                 undedeclared++;
             }
         }
-    
+
     return undedeclared;
 }

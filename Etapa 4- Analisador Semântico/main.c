@@ -52,10 +52,11 @@ int main(int argc, char *argv[])
     astPrint(program_ast, 0);
 
     // Semantic analyse
-    check_and_set_declarations(program_ast);
-    check_undeclared();
+    
+    //expr_check_operands(program_ast);
+    //check_arithmetic_expression(program_ast);
     printf("\n");
-    check_operands(program_ast);
+    check_program(program_ast);
     printf("\n");
 
     hashPrint();
