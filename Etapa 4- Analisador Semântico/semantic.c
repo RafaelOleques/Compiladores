@@ -376,6 +376,7 @@ int is_number(char *str, int index)
 
 float processa_expr_pilha(pilha_aritmetica *cabecote)
 {
+    return 0;
     int operacao_atual = -1;
     float val1, val2;
     if (cabecote->tipo == PILHA_OPERADOR)
@@ -408,7 +409,7 @@ float processa_expr_pilha(pilha_aritmetica *cabecote)
     }
     else
     {
-        //printf(" %f ", cabecote->valor);
+        // printf(" %f ", cabecote->valor);
         return cabecote->valor;
     }
 }
@@ -721,6 +722,20 @@ int is_exprAritmetica(AST *node, int accept_bool, int accept_float, char *functi
 
         return FALSE;
 
+    // Vetores
+    case AST_VECTOR:
+        if (
+            (node->symbol->type == SYMBOL_LIT_INT || node->symbol->type == SYMBOL_LIT_CHAR) ||
+            (node->symbol->type == SYMBOL_VECTOR &&
+             (node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR)))
+            return TRUE;
+
+        if ((node->symbol->type == SYMBOL_LIT_FLOAT) ||
+            (node->symbol->type == SYMBOL_VECTOR && node->symbol->datatype == DATATYPE_FLOAT))
+            return TRUE;
+
+        return FALSE;
+
     // Funções
     case AST_chamadaFuncao:
         if (node->symbol->type == SYMBOL_FUNCTION &&
@@ -750,6 +765,8 @@ void expr_check_operands(AST *node, int accept_bool, int accept_float, char *fun
     case AST_SUB:
     case AST_MULT:
     case AST_DIV:
+        // printf("===> expr_check_operands [INICIO]\n");
+
         if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid left operand for %s at %s\n", expr_operand_name(node->type), function_call_name);
@@ -768,6 +785,7 @@ void expr_check_operands(AST *node, int accept_bool, int accept_float, char *fun
     case AST_GE:
     case AST_EQ:
     case AST_DIF:
+        // printf("===> expr_check_operands [INICIO]\n");
         if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid left operand for %s\n", expr_operand_name(node->type));
@@ -796,6 +814,8 @@ void expr_check_parenteses(AST *node, int accept_bool, int accept_float, char *f
     switch (node->type)
     {
     case AST_EXPR_PARENTESES:
+        // printf("===> expr_check_parenteses [INICIO]\n");
+
         if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid operand for PARENTESES\n");
@@ -848,7 +868,7 @@ int check_chamada_parametros_entrada(AST *node, int num_param_expect, int num_pa
     return counter;
 }
 
-void expr_check_function_call(AST *node, char *function_call_name)
+void expr_check_function_call(AST *node, int accept_float, char *function_call_name)
 {
     int i;
     int PARAM_OPERAND = 1;
@@ -861,8 +881,10 @@ void expr_check_function_call(AST *node, char *function_call_name)
     switch (node->type)
     {
     case AST_chamadaFuncao:
+        // printf("===> expr_check_function_call [INICIO]\n");
+
         if (!(node->symbol->type == SYMBOL_FUNCTION &&
-              ((node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_FLOAT ||
+              ((node->symbol->datatype == DATATYPE_INT || (node->symbol->datatype == DATATYPE_FLOAT && accept_float) ||
                 node->symbol->datatype == DATATYPE_CHAR))))
         {
             fprintf(stderr, "Semantic ERROR: invalid operand \'%s\' for FUNCTION\n", node->symbol->text);
@@ -890,7 +912,7 @@ void expr_check_function_call(AST *node, char *function_call_name)
     }
 }
 
-void expr_check_variable_literal_call(AST *node)
+void expr_check_variable_literal_call(AST *node, int accept_float, char *function_call_name)
 {
     int i;
     int LEFT_OPERAND = 0;
@@ -902,16 +924,18 @@ void expr_check_variable_literal_call(AST *node)
     switch (node->type)
     {
     case AST_SYMBOL:
-        if (!(node->symbol->type == SYMBOL_LIT_CHAR || node->symbol->type == SYMBOL_LIT_FLOAT ||
+        // printf("===> expr_check_variable_literal_call [INICIO]\n");
+
+        if (!(node->symbol->type == SYMBOL_LIT_CHAR || (node->symbol->type == SYMBOL_LIT_FLOAT && accept_float) ||
               node->symbol->type == SYMBOL_LIT_INT || node->symbol->type == SYMBOL_VARIABLE))
         {
             fprintf(stderr, "Semantic ERROR: invalid \'%s\' for SYMBOL\n", node->symbol->text);
             semanticErrors++;
         }
         else if (node->symbol->type == SYMBOL_VARIABLE &&
-                 !(node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR || node->symbol->datatype == DATATYPE_FLOAT))
+                 !(node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR || (node->symbol->datatype == DATATYPE_FLOAT && accept_float)))
         {
-            fprintf(stderr, "Semantic ERROR: invalid variable '%s\' TYPE\n", node->symbol->text);
+            fprintf(stderr, "Semantic ERROR: invalid variable '%s\' TYPE not accepted at %s\n", node->symbol->text, function_call_name);
             semanticErrors++;
         }
 
@@ -922,6 +946,54 @@ void expr_check_variable_literal_call(AST *node)
     }
 }
 
+int is_vector(HASH_NODE *node, int accept_float)
+{
+    switch (node->type)
+    {
+    case SYMBOL_VECTOR:
+        switch (node->datatype)
+        {
+        case DATATYPE_INT:
+        case DATATYPE_CHAR:
+            return TRUE;
+        case DATATYPE_FLOAT:
+            return accept_float;
+        default:
+            break;
+        }
+
+    default:
+        return FALSE;
+    }
+}
+
+int expr_check_vector_call(AST *node, int accept_float, char *function_call_name)
+{
+    int INDEX = 0, VALUE = 1;
+    int accept_bool = FALSE, accept_float_interno = FALSE;
+    if (node == 0)
+        return FALSE;
+
+    if (node->type != AST_VECTOR)
+        return FALSE;
+
+    // printf("===> expr_check_vector_call [INICIO]\n");
+
+    // printf("===> expr_check_vector_call [IDENTIFICADOR : %s]\n", node->symbol->text);
+    // Identifier
+    if (!is_vector(node->symbol, accept_float))
+    {
+        fprintf(stderr, "Semantic ERROR: identifier \'%s\' not accepted at %s\n", node->symbol->text, function_call_name);
+        semanticErrors += 1;
+    }
+
+    // Index
+    !is_exprAritmetica(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX");
+    // printf("===> expr_check_vector_call [INDICE]\n");
+    check_arithmetic_expression(node->son[INDEX], FALSE, accept_float_interno, "VECTOR INDEX");
+    return TRUE;
+}
+
 void check_arithmetic_expression(AST *node, int accept_bool, int accept_float, char *function_call_name)
 {
     int i;
@@ -929,19 +1001,25 @@ void check_arithmetic_expression(AST *node, int accept_bool, int accept_float, c
 
     if (node == 0)
         return;
-
+    // volta
     expr_check_operands(node, accept_bool, accept_float, function_call_name);
     expr_check_parenteses(node, accept_bool, accept_float, function_call_name);
-    expr_check_function_call(node, function_call_name);
-    expr_check_variable_literal_call(node);
+    expr_check_function_call(node, accept_float, function_call_name);
+    expr_check_variable_literal_call(node, accept_float, function_call_name);
+    int have_vector = FALSE;
+
+    have_vector = expr_check_vector_call(node, accept_float, function_call_name);
 
     for (i = 0; i < MAX_SONS; i++)
     {
         /*-
-        // printf("===> check_arithmetic_expression for\n");
-        printf("\n==============================\n");
+        //// printf("===> check_arithmetic_expression for\n");
+        /*printf("\n==============================\n");
         gera_pilha(node->son[i], 0);
-        printf("==============================\n\n");*/
+        /*printf("\n==============================\n");*/
+
+        if (have_vector && i == 0)
+            continue;
 
         check_arithmetic_expression(node->son[i], accept_bool, accept_float, function_call_name);
     }
@@ -971,28 +1049,9 @@ int is_variable(HASH_NODE *node)
     }
 }
 
-int is_vector(HASH_NODE *node)
-{
-    switch (node->type)
-    {
-    case SYMBOL_VECTOR:
-        switch (node->datatype)
-        {
-        case DATATYPE_INT:
-        case DATATYPE_CHAR:
-        case DATATYPE_FLOAT:
-            return TRUE;
-        default:
-            break;
-        }
-
-    default:
-        return FALSE;
-    }
-}
-
 void atrib_variable(AST *node)
 {
+    // printf("===> atrib_variable [INICIO]\n");
     int FIRST_OPERAND = 0;
     int accept_bool = FALSE, accept_float = TRUE;
 
@@ -1004,18 +1063,20 @@ void atrib_variable(AST *node)
     if (!is_exprAritmetica(node->son[FIRST_OPERAND], accept_bool, accept_float, "VARIABLE VALUE"))
     {
         fprintf(stderr, "Semantic ERROR: invalid right operand for VARIABLE ASSEGMENT\n");
-        semanticErrors++;
+        // semanticErrors++;
     }
-    // printf("===> %s\n",  node->symbol->text);
-    printf("\n==============================\n");
+    //// printf("===> %s\n",  node->symbol->text);
+    /*printf("\n==============================\n");
     pilha_aritmetica *cabecote = pilha;
     gera_pilha(node->son[FIRST_OPERAND], 0, cabecote, -1);
     printf("\n*********\n");
     cabecote = pilha;
     printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
-    printf("==============================\n\n");
+    /*printf("\n==============================\n");*/
 
+    // printf("===> atrib_variable [VERIFICANDO DIREITA]\n");
     check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, accept_float, "VARIABLE VALUE");
+    // printf("===> atrib_variable [FIM]\n");
 }
 
 void atrib_vector(AST *node)
@@ -1024,44 +1085,45 @@ void atrib_vector(AST *node)
     int accept_bool = FALSE, accept_float = TRUE;
 
     // Identifier
-    if (!is_vector(node->symbol))
+    if (!is_vector(node->symbol, accept_float))
     {
         fprintf(stderr, "Semantic ERROR: invalid identifier \'%s\' for VECTOR ASSEGMENT\n", node->symbol->text);
         semanticErrors++;
     }
 
     // Index
-    if (!is_exprAritmetica(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX"))
+    /*if (!is_exprAritmetica(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX"))
     {
         fprintf(stderr, "Semantic ERROR: invalid index operand for VECTOR ASSEGMENT\n");
         semanticErrors++;
-    }
-    // printf("===> atrib_vector index\n");
+    }*/
 
-    printf("\n==============================\n");
+    check_arithmetic_expression(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX");
+
+    //// printf("===> atrib_vector index\n");
+
+    /*printf("\n==============================\n");
     pilha_aritmetica *cabecote = pilha;
     gera_pilha(node->son[INDEX], 0, cabecote, -1);
     printf("\n*********\n");
     cabecote = pilha;
     printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
-    printf("==============================\n\n");
-
-    check_arithmetic_expression(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX");
+    /*printf("\n==============================\n");*/
 
     // Value
-    if (!is_exprAritmetica(node->son[VALUE], accept_bool, accept_float, "VECTOR VALUE"))
+    /*if (!is_exprAritmetica(node->son[VALUE], accept_bool, accept_float, "VECTOR VALUE"))
     {
         fprintf(stderr, "Semantic ERROR: invalid value operand for VECTOR ASSEGMENT\n");
         semanticErrors++;
-    }
-    // printf("===> atrib_vector value\n");
-    printf("\n==============================\n");
+    }*/
+    //// printf("===> atrib_vector value\n");
+    /*printf("\n==============================\n");
     cabecote = pilha;
     gera_pilha(node->son[VALUE], 0, cabecote, -1);
     printf("\n*********\n");
     cabecote = pilha;
     printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
-    printf("==============================\n\n");
+    /*printf("\n==============================\n");*/
 
     check_arithmetic_expression(node->son[VALUE], accept_bool, accept_float, "VECTOR VALUE");
 }
@@ -1114,13 +1176,13 @@ void check_return(AST *node)
             semanticErrors++;
         }
 
-        printf("\n==============================\n");
+        /*printf("\n==============================\n");
         pilha_aritmetica *cabecote = pilha;
         gera_pilha(node->son[FIRST_OPERAND], 0, cabecote, -1);
         printf("\n*********\n");
         cabecote = pilha;
         printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
-        printf("==============================\n\n");
+        /*printf("\n==============================\n");*/
 
         check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, accept_float, "RETURN");
 
@@ -1160,13 +1222,13 @@ void check_print_elemento(AST *node, int accept_bool, int accept_float)
             semanticErrors++;
         }
 
-        printf("\n==============================\n");
+        /*printf("\n==============================\n");
         pilha_aritmetica *cabecote = pilha;
         gera_pilha(node, 0, cabecote, -1);
         printf("\n*********\n");
         cabecote = pilha;
         printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
-        printf("==============================\n\n");
+        /*printf("\n==============================\n");*/
 
         check_arithmetic_expression(node, accept_bool, accept_float, "PRINT");
         break;
@@ -1525,6 +1587,8 @@ void check_program(AST *node)
 
     check_decl(node);
     check_goto(node);
+
+    printf("Semantic errors: %d\n", getSemanticErrors());
 }
 
 int getSemanticErrors()

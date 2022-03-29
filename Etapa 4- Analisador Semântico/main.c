@@ -47,9 +47,7 @@ int main(int argc, char *argv[])
     printf("\n");
     printf("Lines: %d\n", getLineNumber());
 
-    printf("\nHash Table:\n");
-
-    //astPrint(program_ast, 0);
+    astPrint(program_ast, 0);
 
     // Semantic analyse
     
@@ -59,7 +57,8 @@ int main(int argc, char *argv[])
     check_program(program_ast);
     printf("\n");
 
-    hashPrint();
+    //printf("\nHash Table:\n");
+    //hashPrint();
     printf("Acabou =)\n");
 
     if (getSemanticErrors() > 0)

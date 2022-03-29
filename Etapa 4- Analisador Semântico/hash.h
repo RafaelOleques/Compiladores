@@ -41,6 +41,7 @@ typedef struct hash_node
     int datatype;
     int datastruct;
     float value; //variáveis
+    int vector_size;
     int is_context;
     FUNCT_PARAMETERS *parameters;
     char *text;
