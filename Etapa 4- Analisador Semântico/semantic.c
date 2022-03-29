@@ -38,80 +38,89 @@ void set_datatype(AST *node)
     }
 }
 
-FUNCT_PARAMETERS *set_function_parameters(AST *node)
+void set_function_parameters(AST *node, FUNCT_PARAMETERS **actual)
 {
+    FUNCT_PARAMETERS parameters_aux;
     if (node == 0)
-        return 0;
+        return;
 
     int NEXT_PARAMETER = 0;
+
+    FUNCT_PARAMETERS *parameter_node = malloc(sizeof(*parameter_node));
 
     switch (node->type)
     {
     case AST_parametroEntradaIntMultiplo:
-        node->symbol->parameters = (FUNCT_PARAMETERS *)calloc(1, sizeof(FUNCT_PARAMETERS));
-        node->symbol->parameters->text = (char *)calloc(1, sizeof(char));
+        parameter_node->text = malloc(sizeof(parameter_node->text));
 
-        strcpy(node->symbol->parameters->text, node->symbol->text);
+        strcpy(parameter_node->text, node->symbol->text);
+        parameter_node->datatype = DATATYPE_INT;
 
-        node->symbol->parameters->datatype = DATATYPE_INT;
-        node->symbol->parameters->next = set_function_parameters(node->son[NEXT_PARAMETER]);
+        *actual = parameter_node;
 
-        return node->symbol->parameters;
+        set_function_parameters(node->son[NEXT_PARAMETER], &((*actual)->next));
+
+        return;
 
     case AST_parametroEntradaCharMultiplo:
-        node->symbol->parameters = (FUNCT_PARAMETERS *)calloc(1, sizeof(FUNCT_PARAMETERS));
-        node->symbol->parameters->text = (char *)calloc(1, sizeof(char));
+        parameter_node->text = malloc(sizeof(parameter_node->text));
 
-        strcpy(node->symbol->parameters->text, node->symbol->text);
+        strcpy(parameter_node->text, node->symbol->text);
+        parameter_node->datatype = DATATYPE_CHAR;
 
-        node->symbol->parameters->datatype = DATATYPE_CHAR;
-        node->symbol->parameters->next = set_function_parameters(node->son[NEXT_PARAMETER]);
+        *actual = parameter_node;
 
-        return node->symbol->parameters;
+        set_function_parameters(node->son[NEXT_PARAMETER], &((*actual)->next));
+
+        return;
 
     case AST_parametroEntradaFloatMultiplo:
-        node->symbol->parameters = (FUNCT_PARAMETERS *)calloc(1, sizeof(FUNCT_PARAMETERS));
-        node->symbol->parameters->text = (char *)calloc(1, sizeof(char));
+        parameter_node->text = malloc(sizeof(parameter_node->text));
 
-        strcpy(node->symbol->parameters->text, node->symbol->text);
+        strcpy(parameter_node->text, node->symbol->text);
+        parameter_node->datatype = DATATYPE_FLOAT;
 
-        node->symbol->parameters->datatype = DATATYPE_FLOAT;
-        node->symbol->parameters->next = set_function_parameters(node->son[NEXT_PARAMETER]);
+        *actual = parameter_node;
 
-        return node->symbol->parameters;
+        set_function_parameters(node->son[NEXT_PARAMETER], &((*actual)->next));
+
+        return;
 
     case AST_parametroEntradaInt:
-        node->symbol->parameters = (FUNCT_PARAMETERS *)calloc(1, sizeof(FUNCT_PARAMETERS));
-        node->symbol->parameters->text = (char *)calloc(1, sizeof(char));
+        parameter_node->text = malloc(sizeof(parameter_node->text));
 
-        strcpy(node->symbol->parameters->text, node->symbol->text);
-        node->symbol->parameters->datatype = DATATYPE_INT;
-        node->symbol->parameters->next = 0;
+        strcpy(parameter_node->text, node->symbol->text);
+        parameter_node->datatype = DATATYPE_INT;
 
-        return node->symbol->parameters;
+        *actual = parameter_node;
+        (*actual)->next = NULL;
+
+        return;
 
     case AST_parametroEntradaChar:
-        node->symbol->parameters = (FUNCT_PARAMETERS *)calloc(1, sizeof(FUNCT_PARAMETERS));
-        node->symbol->parameters->text = (char *)calloc(1, sizeof(char));
+        parameter_node->text = malloc(sizeof(parameter_node->text));
 
-        strcpy(node->symbol->parameters->text, node->symbol->text);
-        node->symbol->parameters->datatype = DATATYPE_CHAR;
-        node->symbol->parameters->next = 0;
+        strcpy(parameter_node->text, node->symbol->text);
+        parameter_node->datatype = DATATYPE_CHAR;
 
-        return node->symbol->parameters;
+        *actual = parameter_node;
+        (*actual)->next = NULL;
+
+        return;
 
     case AST_parametroEntradaFloat:
-        node->symbol->parameters = (FUNCT_PARAMETERS *)calloc(1, sizeof(FUNCT_PARAMETERS));
-        node->symbol->parameters->text = (char *)calloc(1, sizeof(char));
+        parameter_node->text = malloc(sizeof(parameter_node->text));
 
-        strcpy(node->symbol->parameters->text, node->symbol->text);
-        node->symbol->parameters->datatype = DATATYPE_FLOAT;
-        node->symbol->parameters->next = 0;
+        strcpy(parameter_node->text, node->symbol->text);
+        parameter_node->datatype = DATATYPE_FLOAT;
 
-        return node->symbol->parameters;
+        *actual = parameter_node;
+        (*actual)->next = NULL;
+
+        return;
 
     default:
-        return 0;
+        return;
     }
 }
 
@@ -122,13 +131,14 @@ void set_function_cabecalho(AST *node)
     if (node->symbol)
         if (node->symbol->type != SYMBOL_IDENTIFIER)
         {
-            fprintf(stderr, "Semantic ERROR: function %s are alredy declared\n", node->symbol->text);
+            fprintf(stderr, "Semantic ERROR: %s are alredy declared, can't be used to FUNCTION NAME\n", node->symbol->text);
             semanticErrors++;
         }
 
     node->symbol->type = SYMBOL_FUNCTION;
     node->symbol->is_context = FALSE;
-    node->symbol->parameters = set_function_parameters(node->son[PARAMETERS]);
+    node->son[PARAMETERS]->symbol->parameters = NULL;
+    set_function_parameters(node->son[PARAMETERS], &(node->symbol->parameters));
 }
 
 void set_context(AST *node)
@@ -318,6 +328,209 @@ void check_undeclared()
     semanticErrors += hash_check_undeclared();
 }
 
+// Gera pilha de valores
+void gera_pilha(AST *node, int level)
+{
+    if (node == 0)
+        return;
+
+    int i;
+
+    for (i = 0; i < level; i++)
+        fprintf(stderr, "  ");
+
+    fprintf(stderr, "ast: ");
+
+    switch (node->type)
+    {
+    case AST_SYMBOL:
+        fprintf(stderr, "AST_SYMBOL");
+        break;
+    case AST_ADD:
+        fprintf(stderr, "AST_ADD");
+        break;
+    case AST_SUB:
+        fprintf(stderr, "AST_SUB");
+        break;
+    case AST_MULT:
+        fprintf(stderr, "AST_MULT");
+        break;
+    case AST_DIV:
+        fprintf(stderr, "AST_DIV");
+        break;
+    case AST_LESS:
+        fprintf(stderr, "AST_LESS");
+        break;
+    case AST_GREATER:
+        fprintf(stderr, "AST_GREATER");
+        break;
+    case AST_LE:
+        fprintf(stderr, "AST_LE");
+        break;
+    case AST_GE:
+        fprintf(stderr, "AST_GE");
+        break;
+    case AST_EQ:
+        fprintf(stderr, "AST_EQ");
+        break;
+    case AST_DIF:
+        fprintf(stderr, "AST_DIF");
+        break;
+    case AST_chamadaFuncao:
+        fprintf(stderr, "AST_chamadaFuncao");
+        break;
+    case AST_chamadaParametrosEntrada:
+        fprintf(stderr, "AST_chamadaParametrosEntrada");
+        break;
+    case AST_chamadaParametroEntrada:
+        fprintf(stderr, "AST_chamadaParametroEntrada");
+        break;
+    case AST_READ:
+        fprintf(stderr, "AST_READ");
+        break;
+    case AST_atribuicao:
+        fprintf(stderr, "AST_atribuicao");
+        break;
+    case AST_atribuicao_vector:
+        fprintf(stderr, "AST_atribuicao_vector");
+        break;
+    case AST_print:
+        fprintf(stderr, "AST_print");
+        break;
+    case AST_printElementos:
+        fprintf(stderr, "AST_printElementos");
+        break;
+    case AST_printElemento:
+        fprintf(stderr, "AST_printElemento");
+        break;
+    case AST_return:
+        fprintf(stderr, "AST_return");
+        break;
+    case AST_goto:
+        fprintf(stderr, "AST_goto");
+        break;
+    case AST_label:
+        fprintf(stderr, "AST_label");
+        break;
+    case AST_comandoBloco_label:
+        fprintf(stderr, "AST_comandoBloco_label");
+        break;
+    case AST_bloco:
+        fprintf(stderr, "AST_bloco");
+        break;
+    case AST_if:
+        fprintf(stderr, "AST_if");
+        break;
+    case AST_while:
+        fprintf(stderr, "AST_while");
+        break;
+    case AST_comandoBloco:
+        fprintf(stderr, "AST_comandoBloco");
+        break;
+    case AST_VECTOR:
+        fprintf(stderr, "AST_VECTOR");
+        break;
+    case AST_parametroEntradaInt:
+        fprintf(stderr, "AST_parametroEntradaInt");
+        break;
+    case AST_parametroEntradaChar:
+        fprintf(stderr, "AST_parametroEntradaChar");
+        break;
+    case AST_parametroEntradaFloat:
+        fprintf(stderr, "AST_parametroEntradaFloat");
+        break;
+    case AST_parametroEntradaIntMultiplo:
+        fprintf(stderr, "AST_parametroEntradaInt");
+        break;
+    case AST_parametroEntradaCharMultiplo:
+        fprintf(stderr, "AST_parametroEntradaCharMultiplo");
+        break;
+    case AST_parametroEntradaFloatMultiplo:
+        fprintf(stderr, "AST_parametroEntradaFloatMultiplo");
+        break;
+    case AST_cabecalhoFuncaoInt:
+        fprintf(stderr, "AST_cabecalhoFuncaoInt");
+        break;
+    case AST_cabecalhoFuncaoChar:
+        fprintf(stderr, "AST_cabecalhoFuncaoChar");
+        break;
+    case AST_cabecalhoFuncaoFloat:
+        fprintf(stderr, "AST_cabecalhoFuncaoFloat");
+        break;
+    case AST_declaracaoFuncao:
+        fprintf(stderr, "AST_declaracaoFuncao");
+        break;
+    case AST_valoresVetor:
+        fprintf(stderr, "AST_valoresVetor");
+        break;
+    case AST_declaracaoVetorInt:
+        fprintf(stderr, "AST_declaracaoVetorInt");
+        break;
+    case AST_declaracaoVetorChar:
+        fprintf(stderr, "AST_declaracaoVetorChar");
+        break;
+    case AST_declaracaoVetorFloat:
+        fprintf(stderr, "AST_declaracaoVetorFloat");
+        break;
+    case AST_tamVetor:
+        fprintf(stderr, "AST_tamVetor");
+        break;
+    case AST_declaracaoVariavel:
+        fprintf(stderr, "AST_declaracaoVariavel");
+        break;
+    case AST_declaracaoVariavelInt:
+        fprintf(stderr, "AST_declaracaoVariavelInt");
+        break;
+    case AST_declaracaoVariavelChar:
+        fprintf(stderr, "AST_declaracaoVariavelChar");
+        break;
+    case AST_declaracaoVariavelFloat:
+        fprintf(stderr, "AST_declaracaoVariavelFloat");
+        break;
+    case AST_declaracaoVariavelFloatLiteral:
+        fprintf(stderr, "AST_declaracaoVariavelFloatLiteral");
+        break;
+    case AST_decl:
+        fprintf(stderr, "AST_decl");
+        break;
+    case AST_declPV:
+        fprintf(stderr, "AST_declPV");
+        break;
+    case AST_EXPR_PARENTESES:
+        fprintf(stderr, "AST_EXPR_PARENTESES");
+        break;
+    case AST_ifElse:
+        fprintf(stderr, "AST_ifElse");
+        break;
+    case AST_valoresVetorMultiplo:
+        fprintf(stderr, "AST_valoresVetorMultiplo");
+        break;
+    case AST_declaracaoVetorIntValores:
+        fprintf(stderr, "AST_declaracaoVetorIntValores");
+        break;
+    case AST_declaracaoVetorCharValores:
+        fprintf(stderr, "AST_declaracaoVetorCharValores");
+        break;
+    case AST_declaracaoVetorFloatValores:
+        fprintf(stderr, "AST_declaracaoVetorFloatValores");
+        break;
+
+    default:
+        fprintf(stderr, "AST_UNKNOWN");
+        break;
+    }
+
+    if (node->symbol != 0)
+        fprintf(stderr, ", %s\n", node->symbol->text);
+    else
+        fprintf(stderr, ", 0\n");
+
+    for (i = 0; i < MAX_SONS; i++)
+    {
+        astPrint(node->son[i], level + 1);
+    }
+}
+
 // **********************
 // Expressões Aritméticas
 // **********************
@@ -352,7 +565,7 @@ char *expr_operand_name(int type)
 }
 
 // Falta vetor e parâmetros de função
-int is_exprAritmetica(AST *node, int accept_bool, char *function_call_name)
+int is_exprAritmetica(AST *node, int accept_bool, int accept_float, char *function_call_name)
 {
     if (node == 0)
     {
@@ -393,12 +606,18 @@ int is_exprAritmetica(AST *node, int accept_bool, char *function_call_name)
             (node->symbol->type == SYMBOL_VARIABLE &&
              (node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR)))
             return TRUE;
+
+        if ((node->symbol->type == SYMBOL_LIT_FLOAT) ||
+            (node->symbol->type == SYMBOL_VARIABLE && node->symbol->datatype == DATATYPE_FLOAT))
+            return TRUE;
+
         return FALSE;
 
     // Funções
     case AST_chamadaFuncao:
         if (node->symbol->type == SYMBOL_FUNCTION &&
-            (node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR))
+            (node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_FLOAT ||
+             node->symbol->datatype == DATATYPE_CHAR))
             return TRUE;
         return FALSE;
 
@@ -407,7 +626,7 @@ int is_exprAritmetica(AST *node, int accept_bool, char *function_call_name)
     }
 }
 
-void expr_check_operands(AST *node, int accept_bool, char *function_call_name)
+void expr_check_operands(AST *node, int accept_bool, int accept_float, char *function_call_name)
 {
     int i;
     int LEFT_OPERAND = 0, RIGHT_OPERAND = 1;
@@ -423,12 +642,12 @@ void expr_check_operands(AST *node, int accept_bool, char *function_call_name)
     case AST_SUB:
     case AST_MULT:
     case AST_DIV:
-        if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, function_call_name))
+        if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid left operand for %s at %s\n", expr_operand_name(node->type), function_call_name);
             semanticErrors++;
         }
-        if (!is_exprAritmetica(node->son[RIGHT_OPERAND], accept_bool, function_call_name))
+        if (!is_exprAritmetica(node->son[RIGHT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid right operand for %s at %s!\n", expr_operand_name(node->type), function_call_name);
             semanticErrors++;
@@ -441,12 +660,12 @@ void expr_check_operands(AST *node, int accept_bool, char *function_call_name)
     case AST_GE:
     case AST_EQ:
     case AST_DIF:
-        if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, function_call_name))
+        if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid left operand for %s\n", expr_operand_name(node->type));
             semanticErrors++;
         }
-        if (!is_exprAritmetica(node->son[RIGHT_OPERAND], accept_bool, function_call_name))
+        if (!is_exprAritmetica(node->son[RIGHT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid right operand for %s\n", expr_operand_name(node->type));
             semanticErrors++;
@@ -458,7 +677,7 @@ void expr_check_operands(AST *node, int accept_bool, char *function_call_name)
     }
 }
 
-void expr_check_parenteses(AST *node, int accept_bool, char *function_call_name)
+void expr_check_parenteses(AST *node, int accept_bool, int accept_float, char *function_call_name)
 {
     int i;
     int LEFT_OPERAND = 0;
@@ -469,7 +688,7 @@ void expr_check_parenteses(AST *node, int accept_bool, char *function_call_name)
     switch (node->type)
     {
     case AST_EXPR_PARENTESES:
-        if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, function_call_name))
+        if (!is_exprAritmetica(node->son[LEFT_OPERAND], accept_bool, accept_float, function_call_name))
         {
             fprintf(stderr, "Semantic ERROR: invalid operand for PARENTESES\n");
             semanticErrors++;
@@ -481,11 +700,52 @@ void expr_check_parenteses(AST *node, int accept_bool, char *function_call_name)
     }
 }
 
-// Falta verificar os parâmetros
-void expr_check_function_call(AST *node)
+// Assinatura
+void check_arithmetic_expression(AST *, int, int, char *);
+
+int check_chamada_parametros_entrada(AST *node, int num_param_expect, int num_param_used)
+{
+    if (node == 0)
+        return num_param_used;
+
+    int accept_bool = FALSE, accept_float = TRUE;
+    int LEFT_SON = 0, RIGHT_SON = 1;
+    int counter = num_param_used;
+
+    counter++;
+
+    if (node->type == AST_chamadaParametroEntrada)
+    {
+        if (!is_exprAritmetica(node->son[LEFT_SON], accept_bool, accept_float, "FUNCTION PARAMETERS"))
+
+        {
+            fprintf(stderr, "Semantic ERROR: invalid operand for FUNCTION PARAMETERS!\n");
+            semanticErrors++;
+        }
+        // check_arithmetic_expression(node->son[LEFT_SON], accept_bool, accept_float, "FUNCTION PARAMETERS");
+
+        counter = check_chamada_parametros_entrada(node->son[RIGHT_SON], num_param_expect, counter);
+    }
+    else
+    {
+        if (!is_exprAritmetica(node, accept_bool, accept_float, "FUNCTION PARAMETERS"))
+
+        {
+            fprintf(stderr, "Semantic ERROR: invalid operand for FUNCTION PARAMETERS\n");
+            semanticErrors++;
+        }
+        // check_arithmetic_expression(node, accept_bool, "FUNCTION PARAMETERS");
+    }
+
+    return counter;
+}
+
+void expr_check_function_call(AST *node, char *function_call_name)
 {
     int i;
-    int LEFT_OPERAND = 0;
+    int PARAM_OPERAND = 1;
+    int num_param = 0, num_param_used;
+    FUNCT_PARAMETERS *i_param;
 
     if (node == 0)
         return;
@@ -494,9 +754,25 @@ void expr_check_function_call(AST *node)
     {
     case AST_chamadaFuncao:
         if (!(node->symbol->type == SYMBOL_FUNCTION &&
-              ((node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR))))
+              ((node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_FLOAT ||
+                node->symbol->datatype == DATATYPE_CHAR))))
         {
             fprintf(stderr, "Semantic ERROR: invalid operand \'%s\' for FUNCTION\n", node->symbol->text);
+            semanticErrors++;
+        }
+
+        i_param = node->symbol->parameters;
+
+        while (i_param != NULL)
+        {
+            num_param++;
+            i_param = i_param->next;
+        }
+        num_param_used = check_chamada_parametros_entrada(node->son[PARAM_OPERAND], num_param, 0);
+
+        if (num_param != num_param_used)
+        {
+            fprintf(stderr, "Semantic ERROR: expected %d parameter for FUNCTION '%s', used %d\n", num_param, node->symbol->text, num_param_used);
             semanticErrors++;
         }
         break;
@@ -518,16 +794,16 @@ void expr_check_variable_literal_call(AST *node)
     switch (node->type)
     {
     case AST_SYMBOL:
-        if (!(node->symbol->type == SYMBOL_LIT_CHAR ||
+        if (!(node->symbol->type == SYMBOL_LIT_CHAR || node->symbol->type == SYMBOL_LIT_FLOAT ||
               node->symbol->type == SYMBOL_LIT_INT || node->symbol->type == SYMBOL_VARIABLE))
         {
             fprintf(stderr, "Semantic ERROR: invalid \'%s\' for SYMBOL\n", node->symbol->text);
             semanticErrors++;
         }
         else if (node->symbol->type == SYMBOL_VARIABLE &&
-                 !(node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR))
+                 !(node->symbol->datatype == DATATYPE_INT || node->symbol->datatype == DATATYPE_CHAR || node->symbol->datatype == DATATYPE_FLOAT))
         {
-            fprintf(stderr, "Semantic ERROR: invalid operand '%s\' for VARIABLE\n", node->symbol->text);
+            fprintf(stderr, "Semantic ERROR: invalid variable '%s\' TYPE\n", node->symbol->text);
             semanticErrors++;
         }
 
@@ -538,7 +814,7 @@ void expr_check_variable_literal_call(AST *node)
     }
 }
 
-void check_arithmetic_expression(AST *node, int accept_bool, char *function_call_name)
+void check_arithmetic_expression(AST *node, int accept_bool, int accept_float, char *function_call_name)
 {
     int i;
     int LEFT_OPERAND = 0, RIGHT_OPERAND = 1;
@@ -546,14 +822,20 @@ void check_arithmetic_expression(AST *node, int accept_bool, char *function_call
     if (node == 0)
         return;
 
-    expr_check_operands(node, accept_bool, function_call_name);
-    expr_check_parenteses(node, accept_bool, function_call_name);
-    expr_check_function_call(node);
+    expr_check_operands(node, accept_bool, accept_float, function_call_name);
+    expr_check_parenteses(node, accept_bool, accept_float, function_call_name);
+    expr_check_function_call(node, function_call_name);
     expr_check_variable_literal_call(node);
 
     for (i = 0; i < MAX_SONS; i++)
     {
-        check_arithmetic_expression(node->son[i], accept_bool, function_call_name);
+        /*-
+        // printf("===> check_arithmetic_expression for\n");
+        printf("\n==============================\n");
+        gera_pilha(node->son[i], 0);
+        printf("==============================\n\n");*/
+
+        check_arithmetic_expression(node->son[i], accept_bool, accept_float, function_call_name);
     }
 }
 
@@ -569,9 +851,8 @@ int is_variable(HASH_NODE *node)
         switch (node->datatype)
         {
         case DATATYPE_INT:
-            // return DATATYPE_INT;
         case DATATYPE_CHAR:
-            // return DATATYPE_CHAR;
+        case DATATYPE_FLOAT:
             return TRUE;
         default:
             break;
@@ -590,9 +871,8 @@ int is_vector(HASH_NODE *node)
         switch (node->datatype)
         {
         case DATATYPE_INT:
-            // return DATATYPE_INT;
         case DATATYPE_CHAR:
-            // return DATATYPE_CHAR;
+        case DATATYPE_FLOAT:
             return TRUE;
         default:
             break;
@@ -606,26 +886,30 @@ int is_vector(HASH_NODE *node)
 void atrib_variable(AST *node)
 {
     int FIRST_OPERAND = 0;
-    int accept_bool = FALSE;
+    int accept_bool = FALSE, accept_float = TRUE;
 
     if (!is_variable(node->symbol))
     {
         fprintf(stderr, "Semantic ERROR: invalid operand \'%s\' for VARIABLE ASSEGMENT\n", node->symbol->text);
         semanticErrors++;
     }
-    if (!is_exprAritmetica(node->son[FIRST_OPERAND], accept_bool, "VARIABLE VALUE"))
+    if (!is_exprAritmetica(node->son[FIRST_OPERAND], accept_bool, accept_float, "VARIABLE VALUE"))
     {
         fprintf(stderr, "Semantic ERROR: invalid right operand for VARIABLE ASSEGMENT\n");
         semanticErrors++;
     }
+    // printf("===> %s\n",  node->symbol->text);
+    printf("\n==============================\n");
+        gera_pilha(node->son[FIRST_OPERAND], 0);
+        printf("==============================\n\n");
 
-    check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, "VARIABLE VALUE");
+    check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, accept_float, "VARIABLE VALUE");
 }
 
 void atrib_vector(AST *node)
 {
     int INDEX = 0, VALUE = 1;
-    int accept_bool = FALSE;
+    int accept_bool = FALSE, accept_float = TRUE;
 
     // Identifier
     if (!is_vector(node->symbol))
@@ -635,28 +919,37 @@ void atrib_vector(AST *node)
     }
 
     // Index
-    if (!is_exprAritmetica(node->son[INDEX], accept_bool, "VECTOR INDEX"))
+    if (!is_exprAritmetica(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX"))
     {
         fprintf(stderr, "Semantic ERROR: invalid index operand for VECTOR ASSEGMENT\n");
         semanticErrors++;
     }
+    // printf("===> atrib_vector index\n");
 
-    check_arithmetic_expression(node->son[INDEX], accept_bool, "VECTOR INDEX");
+    printf("\n==============================\n");
+        gera_pilha(node->son[INDEX], 0);
+        printf("==============================\n\n");
+
+    check_arithmetic_expression(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX");
 
     // Value
-    if (!is_exprAritmetica(node->son[VALUE], accept_bool, "VECTOR VALUE"))
+    if (!is_exprAritmetica(node->son[VALUE], accept_bool, accept_float, "VECTOR VALUE"))
     {
         fprintf(stderr, "Semantic ERROR: invalid value operand for VECTOR ASSEGMENT\n");
         semanticErrors++;
     }
+    // printf("===> atrib_vector value\n");
+    printf("\n==============================\n");
+        gera_pilha(node->son[VALUE], 0);
+        printf("==============================\n\n");
 
-    check_arithmetic_expression(node->son[VALUE], accept_bool, "VECTOR VALUE");
+    check_arithmetic_expression(node->son[VALUE], accept_bool, accept_float, "VECTOR VALUE");
 }
 
 void check_atrib(AST *node)
 {
     int i;
-    int accept_bool = FALSE;
+    int accept_bool = FALSE, accept_float = TRUE;
 
     if (node == 0)
         return;
@@ -687,7 +980,7 @@ void check_return(AST *node)
 {
     int i;
     int FIRST_OPERAND = 0;
-    int accept_bool = FALSE;
+    int accept_bool = FALSE, accept_float = TRUE;
 
     if (node == 0)
         return;
@@ -695,12 +988,17 @@ void check_return(AST *node)
     switch (node->type)
     {
     case AST_return:
-        if (!is_exprAritmetica(node->son[FIRST_OPERAND], accept_bool, "RETURN"))
+        if (!is_exprAritmetica(node->son[FIRST_OPERAND], accept_bool, accept_float, "RETURN"))
         {
             fprintf(stderr, "Semantic ERROR: invalid operand for RETURN\n");
             semanticErrors++;
         }
-        check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, "RETURN");
+
+        printf("\n==============================\n");
+        gera_pilha(node->son[FIRST_OPERAND], 0);
+        printf("==============================\n\n");
+
+        check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, accept_float, "RETURN");
 
     default:
         break;
@@ -716,14 +1014,14 @@ void check_return(AST *node)
 // Print
 // **********************
 
-void check_print_elemento(AST *node, int accept_bool)
+void check_print_elemento(AST *node, int accept_bool, int accept_float)
 {
     switch (node->type)
     {
     case AST_SYMBOL:
         if (
             !(node->symbol->type == SYMBOL_LIT_STRING ||
-              is_exprAritmetica(node, accept_bool, "PRINT")))
+              is_exprAritmetica(node, accept_bool, accept_float, "PRINT")))
         {
             fprintf(stderr, "Semantic ERROR: invalid operand for PRINT\n");
             semanticErrors++;
@@ -731,30 +1029,35 @@ void check_print_elemento(AST *node, int accept_bool)
         break;
 
     default:
-        if (!is_exprAritmetica(node, accept_bool, "PRINT"))
+        if (!is_exprAritmetica(node, accept_bool, accept_float, "PRINT"))
 
         {
             fprintf(stderr, "Semantic ERROR: invalid operand for PRINT\n");
             semanticErrors++;
         }
-        check_arithmetic_expression(node, accept_bool, "PRINT");
+        
+        printf("\n==============================\n");
+        gera_pilha(node, 0);
+        printf("==============================\n\n");
+
+        check_arithmetic_expression(node, accept_bool, accept_float, "PRINT");
         break;
     }
 }
 
-void check_print_elementos(AST *node, int accept_bool)
+void check_print_elementos(AST *node, int accept_bool, int accept_float)
 {
     int LEFT_SON = 0, RIGHT_SON = 1;
 
     switch (node->type)
     {
     case AST_printElementos:
-        check_print_elemento(node->son[LEFT_SON], accept_bool);
-        check_print_elementos(node->son[RIGHT_SON], accept_bool);
+        check_print_elemento(node->son[LEFT_SON], accept_bool, accept_float);
+        check_print_elementos(node->son[RIGHT_SON], accept_bool, accept_float);
         break;
 
     default:
-        check_print_elemento(node, accept_bool);
+        check_print_elemento(node, accept_bool, accept_float);
     }
 }
 
@@ -762,14 +1065,14 @@ void check_print(AST *node)
 {
     int i;
     int FIRST_OPERAND = 0;
-    int accept_bool = FALSE;
+    int accept_bool = FALSE, accept_float = TRUE;
 
     if (node == 0)
         return;
 
     if (node->type == AST_print)
     {
-        check_print_elementos(node->son[FIRST_OPERAND], accept_bool);
+        check_print_elementos(node->son[FIRST_OPERAND], accept_bool, accept_float);
     }
 
     for (i = 0; i < MAX_SONS; i++)
@@ -1091,7 +1394,6 @@ void check_program(AST *node)
 
     check_decl(node);
     check_goto(node);
-
 }
 
 int getSemanticErrors()

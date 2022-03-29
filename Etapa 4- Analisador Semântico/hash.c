@@ -57,7 +57,7 @@ HASH_NODE *hashInsert(char *text, int type)
 
 void print_function_parameters(FUNCT_PARAMETERS *parameters)
 {
-    if (parameters == 0)
+    if (parameters == NULL)
         return;
 
     printf("\t%s: ", parameters->text);
@@ -75,6 +75,7 @@ void print_function_parameters(FUNCT_PARAMETERS *parameters)
         break;
 
     default:
+    printf("LOST, EVERTHING IS LOST!\n");
         break;
     }
 
@@ -88,12 +89,7 @@ void hashPrint(void)
     for (i = 0; i < HASH_SIZE; i++)
         for (node = table[i]; node; node = node->next)
         {
-            printf("Table[%d] has %s ", i, node->text);
-            if(!node->is_context)
-                printf(" NO CONTEXT ");
-            else
-                printf(" CONTEXT ");
-            printf(" with type ");
+            printf("Table[%d] has %s with type ", i, node->text);
 
             switch (node->type)
             {

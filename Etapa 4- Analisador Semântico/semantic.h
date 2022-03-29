@@ -4,6 +4,13 @@
 #include "ast.h"
 #include "hash.h"
 
+typedef struct pilha_aritmetica
+{
+    char* identificador;
+    char* indice; //Em caso de vetor
+    struct pilha_aritmetica *next;    
+} pilha_aritmetica;
+
 extern int semanticErrors;
 
 void check_and_set_declarations(AST *node);

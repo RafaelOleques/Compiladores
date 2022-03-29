@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
     printf("\nHash Table:\n");
 
-    astPrint(program_ast, 0);
+    //astPrint(program_ast, 0);
 
     // Semantic analyse
     
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
     printf("\n");
 
     hashPrint();
+    printf("Acabou =)\n");
 
     if (getSemanticErrors() > 0)
         exit(4);
