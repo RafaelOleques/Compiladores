@@ -112,7 +112,7 @@ void hashPrint(void)
                 printf("SYMBOL_FALSE");
                 break;
             case SYMBOL_VARIABLE:
-                printf("SYMBOL_VARIABLE");
+                printf("SYMBOL_VARIABLE and value: %f", node->value);
                 break;
             case SYMBOL_FUNCTION:
                 printf("SYMBOL_FUNCTION ");

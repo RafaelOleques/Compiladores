@@ -1,10 +1,12 @@
 #include "semantic.h"
+#include <stdlib.h>
 #include <string.h>
 #define TRUE 1
 #define FALSE 0
 
 FUNCT_PARAMETERS *context;
 FUNCT_PARAMETERS *original_context;
+pilha_aritmetica *pilha;
 
 int semanticErrors = 0;
 
@@ -249,9 +251,36 @@ void clear_context()
     }
 }
 
+void set_variable(AST *node)
+{
+    if (node->symbol)
+        if (node->symbol->type != SYMBOL_IDENTIFIER)
+        {
+            fprintf(stderr, "Semantic ERROR: variable %s are alredy declared\n", node->symbol->text);
+            semanticErrors++;
+        }
+
+    node->symbol->type = SYMBOL_VARIABLE;
+    node->symbol->is_context = FALSE;
+}
+
+float set_variable_value(char *text)
+{
+    if (text[0] == '\'')
+        return text[1];
+    else
+        return atoi(text);
+}
+
+float set_variable_value_float(char *val1, char *val2)
+{
+    return set_variable_value(val1) / set_variable_value(val2);
+}
+
 void check_and_set_declarations(AST *node)
 {
     int i;
+    int FIRST_SON = 0, SECOND_SON = 1;
 
     if (node == 0)
         return;
@@ -287,16 +316,13 @@ void check_and_set_declarations(AST *node)
     // case AST_declaracaoVariavel:
     case AST_declaracaoVariavelInt:
     case AST_declaracaoVariavelChar:
-    case AST_declaracaoVariavelFloat:
-        if (node->symbol)
-            if (node->symbol->type != SYMBOL_IDENTIFIER)
-            {
-                fprintf(stderr, "Semantic ERROR: variable %s are alredy declared\n", node->symbol->text);
-                semanticErrors++;
-            }
+        set_variable(node);
+        node->symbol->value = set_variable_value(node->son[FIRST_SON]->symbol->text);
+        break;
 
-        node->symbol->type = SYMBOL_VARIABLE;
-        node->symbol->is_context = FALSE;
+    case AST_declaracaoVariavelFloat:
+        set_variable(node);
+        node->symbol->value = set_variable_value_float(node->son[FIRST_SON]->symbol->text, node->son[SECOND_SON]->symbol->text);
         break;
 
     case AST_label:
@@ -328,9 +354,69 @@ void check_undeclared()
     semanticErrors += hash_check_undeclared();
 }
 
+// **************************
 // Gera pilha de valores
-void gera_pilha(AST *node, int level)
+// **************************
+
+int is_number(char *str, int index)
 {
+    int retorno;
+
+    if (str[index] >= '0' && str[index] <= '9')
+    {
+        retorno = is_number(str, index + 1);
+    }
+    else if (str[index] == '\0')
+        retorno = TRUE;
+    else
+        retorno = FALSE;
+
+    return retorno;
+}
+
+float processa_expr_pilha(pilha_aritmetica *cabecote)
+{
+    int operacao_atual = -1;
+    float val1, val2;
+    if (cabecote->tipo == PILHA_OPERADOR)
+    {
+        operacao_atual = cabecote->operador;
+        val1 = processa_expr_pilha(cabecote->expr_esq);
+        val2 = processa_expr_pilha(cabecote->expr_dir);
+
+        switch (operacao_atual)
+        {
+        case AST_ADD:
+            // printf(" + ");
+            return val1 + val2;
+            break;
+        case AST_SUB:
+            // printf(" - ");
+            return val1 - val2;
+            break;
+        case AST_DIV:
+            // printf(" / ");
+            return val1 / val2;
+            break;
+        case AST_MULT:
+            // printf(" * ");
+            return val1 * val2;
+            break;
+        default:
+            break;
+        }
+    }
+    else
+    {
+        //printf(" %f ", cabecote->valor);
+        return cabecote->valor;
+    }
+}
+
+void gera_pilha(AST *node, int level, pilha_aritmetica *cabecote, int filho)
+{
+    int tipo, OPERANDO = 0;
+    int primeiro = 0, segundo = 1;
     if (node == 0)
         return;
 
@@ -339,196 +425,218 @@ void gera_pilha(AST *node, int level)
     for (i = 0; i < level; i++)
         fprintf(stderr, "  ");
 
-    fprintf(stderr, "ast: ");
+    switch (node->type)
+    {
+    case AST_SYMBOL:
+    case AST_chamadaFuncao:
+    case AST_ADD:
+    case AST_SUB:
+    case AST_MULT:
+    case AST_DIV:
+        if (filho == 0)
+        {
+            cabecote->expr_esq = malloc(sizeof(*(cabecote->expr_esq)));
+            cabecote = cabecote->expr_esq;
+            printf("Esquerda! ");
+        }
+        else if (filho == 1)
+        {
+            cabecote->expr_dir = malloc(sizeof(*(cabecote->expr_dir)));
+            cabecote = cabecote->expr_dir;
+            printf("Direita! ");
+        }
+        break;
+    }
+
+    // fprintf(stderr, "ast: ");
 
     switch (node->type)
     {
     case AST_SYMBOL:
-        fprintf(stderr, "AST_SYMBOL");
-        break;
-    case AST_ADD:
-        fprintf(stderr, "AST_ADD");
-        break;
-    case AST_SUB:
-        fprintf(stderr, "AST_SUB");
-        break;
-    case AST_MULT:
-        fprintf(stderr, "AST_MULT");
-        break;
-    case AST_DIV:
-        fprintf(stderr, "AST_DIV");
-        break;
-    case AST_LESS:
-        fprintf(stderr, "AST_LESS");
-        break;
-    case AST_GREATER:
-        fprintf(stderr, "AST_GREATER");
-        break;
-    case AST_LE:
-        fprintf(stderr, "AST_LE");
-        break;
-    case AST_GE:
-        fprintf(stderr, "AST_GE");
-        break;
-    case AST_EQ:
-        fprintf(stderr, "AST_EQ");
-        break;
-    case AST_DIF:
-        fprintf(stderr, "AST_DIF");
+        // fprintf(stderr, "AST_SYMBOL");
+        if (is_number(node->symbol->text, 0))
+        {
+            cabecote->valor = atoi(node->symbol->text);
+            cabecote->tipo = PILHA_VALOR;
+            printf("%f\n", cabecote->valor);
+        }
+        else
+        {
+            cabecote->valor = node->symbol->value;
+            cabecote->tipo = PILHA_VALOR;
+
+            printf("%f\n", cabecote->valor);
+        }
         break;
     case AST_chamadaFuncao:
-        fprintf(stderr, "AST_chamadaFuncao");
+        fprintf(stderr, "AST_chamadaFuncao: ");
+
+        cabecote->valor = 0;
+        cabecote->tipo = PILHA_VALOR;
+
+        printf("%f\n", cabecote->valor);
+        return;
         break;
-    case AST_chamadaParametrosEntrada:
-        fprintf(stderr, "AST_chamadaParametrosEntrada");
+
+    case AST_ADD:
+        fprintf(stderr, "AST_ADD\n");
+        cabecote->tipo = PILHA_OPERADOR;
+        cabecote->operador = AST_ADD;
         break;
-    case AST_chamadaParametroEntrada:
-        fprintf(stderr, "AST_chamadaParametroEntrada");
+    case AST_SUB:
+        fprintf(stderr, "AST_SUB\n");
+        cabecote->tipo = PILHA_OPERADOR;
+        cabecote->operador = AST_SUB;
         break;
-    case AST_READ:
-        fprintf(stderr, "AST_READ");
+    case AST_MULT:
+        fprintf(stderr, "AST_MULT\n");
+        cabecote->tipo = PILHA_OPERADOR;
+        cabecote->operador = AST_MULT;
         break;
-    case AST_atribuicao:
-        fprintf(stderr, "AST_atribuicao");
+    case AST_DIV:
+        fprintf(stderr, "AST_DIV\n");
+        cabecote->tipo = PILHA_OPERADOR;
+        cabecote->operador = AST_DIV;
         break;
-    case AST_atribuicao_vector:
-        fprintf(stderr, "AST_atribuicao_vector");
-        break;
-    case AST_print:
-        fprintf(stderr, "AST_print");
-        break;
-    case AST_printElementos:
-        fprintf(stderr, "AST_printElementos");
-        break;
-    case AST_printElemento:
-        fprintf(stderr, "AST_printElemento");
-        break;
-    case AST_return:
-        fprintf(stderr, "AST_return");
-        break;
-    case AST_goto:
-        fprintf(stderr, "AST_goto");
-        break;
-    case AST_label:
-        fprintf(stderr, "AST_label");
-        break;
-    case AST_comandoBloco_label:
-        fprintf(stderr, "AST_comandoBloco_label");
-        break;
-    case AST_bloco:
-        fprintf(stderr, "AST_bloco");
-        break;
-    case AST_if:
-        fprintf(stderr, "AST_if");
-        break;
-    case AST_while:
-        fprintf(stderr, "AST_while");
-        break;
-    case AST_comandoBloco:
-        fprintf(stderr, "AST_comandoBloco");
-        break;
-    case AST_VECTOR:
-        fprintf(stderr, "AST_VECTOR");
-        break;
-    case AST_parametroEntradaInt:
-        fprintf(stderr, "AST_parametroEntradaInt");
-        break;
-    case AST_parametroEntradaChar:
-        fprintf(stderr, "AST_parametroEntradaChar");
-        break;
-    case AST_parametroEntradaFloat:
-        fprintf(stderr, "AST_parametroEntradaFloat");
-        break;
-    case AST_parametroEntradaIntMultiplo:
-        fprintf(stderr, "AST_parametroEntradaInt");
-        break;
-    case AST_parametroEntradaCharMultiplo:
-        fprintf(stderr, "AST_parametroEntradaCharMultiplo");
-        break;
-    case AST_parametroEntradaFloatMultiplo:
-        fprintf(stderr, "AST_parametroEntradaFloatMultiplo");
-        break;
-    case AST_cabecalhoFuncaoInt:
-        fprintf(stderr, "AST_cabecalhoFuncaoInt");
-        break;
-    case AST_cabecalhoFuncaoChar:
-        fprintf(stderr, "AST_cabecalhoFuncaoChar");
-        break;
-    case AST_cabecalhoFuncaoFloat:
-        fprintf(stderr, "AST_cabecalhoFuncaoFloat");
-        break;
-    case AST_declaracaoFuncao:
-        fprintf(stderr, "AST_declaracaoFuncao");
-        break;
-    case AST_valoresVetor:
-        fprintf(stderr, "AST_valoresVetor");
-        break;
-    case AST_declaracaoVetorInt:
-        fprintf(stderr, "AST_declaracaoVetorInt");
-        break;
-    case AST_declaracaoVetorChar:
-        fprintf(stderr, "AST_declaracaoVetorChar");
-        break;
-    case AST_declaracaoVetorFloat:
-        fprintf(stderr, "AST_declaracaoVetorFloat");
-        break;
-    case AST_tamVetor:
-        fprintf(stderr, "AST_tamVetor");
-        break;
-    case AST_declaracaoVariavel:
-        fprintf(stderr, "AST_declaracaoVariavel");
-        break;
-    case AST_declaracaoVariavelInt:
-        fprintf(stderr, "AST_declaracaoVariavelInt");
-        break;
-    case AST_declaracaoVariavelChar:
-        fprintf(stderr, "AST_declaracaoVariavelChar");
-        break;
-    case AST_declaracaoVariavelFloat:
-        fprintf(stderr, "AST_declaracaoVariavelFloat");
-        break;
-    case AST_declaracaoVariavelFloatLiteral:
-        fprintf(stderr, "AST_declaracaoVariavelFloatLiteral");
-        break;
-    case AST_decl:
-        fprintf(stderr, "AST_decl");
-        break;
-    case AST_declPV:
-        fprintf(stderr, "AST_declPV");
-        break;
-    case AST_EXPR_PARENTESES:
-        fprintf(stderr, "AST_EXPR_PARENTESES");
-        break;
-    case AST_ifElse:
-        fprintf(stderr, "AST_ifElse");
-        break;
-    case AST_valoresVetorMultiplo:
-        fprintf(stderr, "AST_valoresVetorMultiplo");
-        break;
-    case AST_declaracaoVetorIntValores:
-        fprintf(stderr, "AST_declaracaoVetorIntValores");
-        break;
-    case AST_declaracaoVetorCharValores:
-        fprintf(stderr, "AST_declaracaoVetorCharValores");
-        break;
-    case AST_declaracaoVetorFloatValores:
-        fprintf(stderr, "AST_declaracaoVetorFloatValores");
-        break;
+
+        /* case AST_LESS:'
+             fprintf(stderr, "AST_LESS");
+             break;
+         case AST_GREATER:
+             fprintf(stderr, "AST_GREATER");
+             break;
+         case AST_LE:
+             fprintf(stderr, "AST_LE");
+             break;
+         case AST_GE:
+             fprintf(stderr, "AST_GE");
+             break;
+         case AST_EQ:
+             fprintf(stderr, "AST_EQ");
+             break;
+         case AST_DIF:
+             fprintf(stderr, "AST_DIF");
+             break;
+         case AST_chamadaFuncao:
+             fprintf(stderr, "AST_chamadaFuncao");
+             break;
+         case AST_chamadaParametrosEntrada:
+             fprintf(stderr, "AST_chamadaParametrosEntrada");
+             break;
+         case AST_chamadaParametroEntrada:
+             fprintf(stderr, "AST_chamadaParametroEntrada");
+             break;
+         case AST_READ:
+             fprintf(stderr, "AST_READ");
+             break;
+         case AST_atribuicao:
+             fprintf(stderr, "AST_atribuicao");
+             break;
+         case AST_atribuicao_vector:
+             fprintf(stderr, "AST_atribuicao_vector");
+             break;
+         case AST_VECTOR:
+             fprintf(stderr, "AST_VECTOR");
+             break;
+         case AST_parametroEntradaInt:
+             fprintf(stderr, "AST_parametroEntradaInt");
+             break;
+         case AST_parametroEntradaChar:
+             fprintf(stderr, "AST_parametroEntradaChar");
+             break;
+         case AST_parametroEntradaFloat:
+             fprintf(stderr, "AST_parametroEntradaFloat");
+             break;
+         case AST_parametroEntradaIntMultiplo:
+             fprintf(stderr, "AST_parametroEntradaInt");
+             break;
+         case AST_parametroEntradaCharMultiplo:
+             fprintf(stderr, "AST_parametroEntradaCharMultiplo");
+             break;
+         case AST_parametroEntradaFloatMultiplo:
+             fprintf(stderr, "AST_parametroEntradaFloatMultiplo");
+             break;
+         case AST_cabecalhoFuncaoInt:
+             fprintf(stderr, "AST_cabecalhoFuncaoInt");
+             break;
+         case AST_cabecalhoFuncaoChar:
+             fprintf(stderr, "AST_cabecalhoFuncaoChar");
+             break;
+         case AST_cabecalhoFuncaoFloat:
+             fprintf(stderr, "AST_cabecalhoFuncaoFloat");
+             break;
+         case AST_declaracaoFuncao:
+             fprintf(stderr, "AST_declaracaoFuncao");
+             break;
+         case AST_valoresVetor:
+             fprintf(stderr, "AST_valoresVetor");
+             break;
+         case AST_declaracaoVetorInt:
+             fprintf(stderr, "AST_declaracaoVetorInt");
+             break;
+         case AST_declaracaoVetorChar:
+             fprintf(stderr, "AST_declaracaoVetorChar");
+             break;
+         case AST_declaracaoVetorFloat:
+             fprintf(stderr, "AST_declaracaoVetorFloat");
+             break;
+         case AST_tamVetor:
+             fprintf(stderr, "AST_tamVetor");
+             break;
+         case AST_declaracaoVariavel:
+             fprintf(stderr, "AST_declaracaoVariavel");
+             break;
+         case AST_declaracaoVariavelInt:
+             fprintf(stderr, "AST_declaracaoVariavelInt");
+             break;
+         case AST_declaracaoVariavelChar:
+             fprintf(stderr, "AST_declaracaoVariavelChar");
+             break;
+         case AST_declaracaoVariavelFloat:
+             fprintf(stderr, "AST_declaracaoVariavelFloat");
+             break;
+         case AST_declaracaoVariavelFloatLiteral:
+             fprintf(stderr, "AST_declaracaoVariavelFloatLiteral");
+             break;
+         case AST_decl:
+             fprintf(stderr, "AST_decl");
+             break;
+         case AST_declPV:
+             fprintf(stderr, "AST_declPV");
+             break;
+         case AST_EXPR_PARENTESES:
+             fprintf(stderr, "AST_EXPR_PARENTESES");
+             break;
+         case AST_ifElse:
+             fprintf(stderr, "AST_ifElse");
+             break;
+         case AST_valoresVetorMultiplo:
+             fprintf(stderr, "AST_valoresVetorMultiplo");
+             break;
+         case AST_declaracaoVetorIntValores:
+             fprintf(stderr, "AST_declaracaoVetorIntValores");
+             break;
+         case AST_declaracaoVetorCharValores:
+             fprintf(stderr, "AST_declaracaoVetorCharValores");
+             break;
+         case AST_declaracaoVetorFloatValores:
+             fprintf(stderr, "AST_declaracaoVetorFloatValores");
+             break;
+
+         default:
+             fprintf(stderr, "AST_UNKNOWN");
+             break;*/
 
     default:
-        fprintf(stderr, "AST_UNKNOWN");
-        break;
+        primeiro = 1;
+        segundo = 0;
+        printf("\n");
     }
 
-    if (node->symbol != 0)
-        fprintf(stderr, ", %s\n", node->symbol->text);
-    else
-        fprintf(stderr, ", 0\n");
-
-    for (i = 0; i < MAX_SONS; i++)
-    {
-        astPrint(node->son[i], level + 1);
-    }
+    // cabecote->expr_esq = malloc(sizeof(*(cabecote->expr_esq)));
+    // cabecote->expr_dir = malloc(sizeof(*(cabecote->expr_dir)));
+    gera_pilha(node->son[0], level + 1, cabecote, primeiro);
+    gera_pilha(node->son[1], level + 2, cabecote, segundo);
 }
 
 // **********************
@@ -900,8 +1008,12 @@ void atrib_variable(AST *node)
     }
     // printf("===> %s\n",  node->symbol->text);
     printf("\n==============================\n");
-        gera_pilha(node->son[FIRST_OPERAND], 0);
-        printf("==============================\n\n");
+    pilha_aritmetica *cabecote = pilha;
+    gera_pilha(node->son[FIRST_OPERAND], 0, cabecote, -1);
+    printf("\n*********\n");
+    cabecote = pilha;
+    printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
+    printf("==============================\n\n");
 
     check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, accept_float, "VARIABLE VALUE");
 }
@@ -927,8 +1039,12 @@ void atrib_vector(AST *node)
     // printf("===> atrib_vector index\n");
 
     printf("\n==============================\n");
-        gera_pilha(node->son[INDEX], 0);
-        printf("==============================\n\n");
+    pilha_aritmetica *cabecote = pilha;
+    gera_pilha(node->son[INDEX], 0, cabecote, -1);
+    printf("\n*********\n");
+    cabecote = pilha;
+    printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
+    printf("==============================\n\n");
 
     check_arithmetic_expression(node->son[INDEX], accept_bool, !accept_float, "VECTOR INDEX");
 
@@ -940,8 +1056,12 @@ void atrib_vector(AST *node)
     }
     // printf("===> atrib_vector value\n");
     printf("\n==============================\n");
-        gera_pilha(node->son[VALUE], 0);
-        printf("==============================\n\n");
+    cabecote = pilha;
+    gera_pilha(node->son[VALUE], 0, cabecote, -1);
+    printf("\n*********\n");
+    cabecote = pilha;
+    printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
+    printf("==============================\n\n");
 
     check_arithmetic_expression(node->son[VALUE], accept_bool, accept_float, "VECTOR VALUE");
 }
@@ -995,7 +1115,11 @@ void check_return(AST *node)
         }
 
         printf("\n==============================\n");
-        gera_pilha(node->son[FIRST_OPERAND], 0);
+        pilha_aritmetica *cabecote = pilha;
+        gera_pilha(node->son[FIRST_OPERAND], 0, cabecote, -1);
+        printf("\n*********\n");
+        cabecote = pilha;
+        printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
         printf("==============================\n\n");
 
         check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, accept_float, "RETURN");
@@ -1035,9 +1159,13 @@ void check_print_elemento(AST *node, int accept_bool, int accept_float)
             fprintf(stderr, "Semantic ERROR: invalid operand for PRINT\n");
             semanticErrors++;
         }
-        
+
         printf("\n==============================\n");
-        gera_pilha(node, 0);
+        pilha_aritmetica *cabecote = pilha;
+        gera_pilha(node, 0, cabecote, -1);
+        printf("\n*********\n");
+        cabecote = pilha;
+        printf("RESULTADO: %f\n", processa_expr_pilha(cabecote));
         printf("==============================\n\n");
 
         check_arithmetic_expression(node, accept_bool, accept_float, "PRINT");
@@ -1373,7 +1501,7 @@ void check_decl(AST *node)
         check_decl(node->son[SECOND_SON]);
         break;
     case AST_declPV:
-        // check_declaracao_variavel(node->son[FIRST_SON]);
+        // check_declaracao_variavel(node->son[FIRST_SON]->son[FIRST_SON]);
         check_decl(node->son[SECOND_SON]);
         break;
 
@@ -1386,6 +1514,9 @@ void check_decl(AST *node)
 
 void check_program(AST *node)
 {
+
+    pilha = malloc(sizeof(*pilha));
+
     check_and_set_declarations(node);
     printf("\n");
     // Retirar esse, verificação dentro das funções

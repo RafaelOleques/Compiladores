@@ -40,6 +40,7 @@ typedef struct hash_node
     int type;
     int datatype;
     int datastruct;
+    float value; //variáveis
     int is_context;
     FUNCT_PARAMETERS *parameters;
     char *text;

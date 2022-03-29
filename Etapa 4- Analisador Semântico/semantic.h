@@ -4,11 +4,21 @@
 #include "ast.h"
 #include "hash.h"
 
+#define PILHA_OPERADOR 0
+#define PILHA_VETOR 1
+#define PILHA_VALOR 2
+
 typedef struct pilha_aritmetica
 {
-    char* identificador;
+    int tipo;
+    int operador;
+    float valor;    
+    
+    struct pilha_aritmetica *expr_esq;
+    struct pilha_aritmetica *expr_dir;  
+
+    char* vetor_nome;
     char* indice; //Em caso de vetor
-    struct pilha_aritmetica *next;    
 } pilha_aritmetica;
 
 extern int semanticErrors;
