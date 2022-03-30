@@ -277,10 +277,41 @@ float set_variable_value_float(char *val1, char *val2)
     return set_variable_value(val1) / set_variable_value(val2);
 }
 
+int chech_vector_values_total(AST *node, int count)
+{
+    int FIRST_SON = 0, SECOND_SON = 1;
+
+    if (node->son[SECOND_SON] == 0)
+        return count;
+
+    return chech_vector_values_total(node->son[SECOND_SON], count + 1);
+}
+
+int chech_vector_values(AST *node)
+{
+    int total = 0;
+    switch (node->type)
+    {
+    case AST_declaracaoVetorInt:
+    case AST_declaracaoVetorChar:
+    case AST_declaracaoVetorFloat:
+        break;
+
+    case AST_declaracaoVetorIntValores:
+    case AST_declaracaoVetorCharValores:
+    case AST_declaracaoVetorFloatValores:
+        return total = chech_vector_values_total(node->son[1], 1);
+        break;
+    }
+
+    return -1;
+}
+
 void check_and_set_declarations(AST *node)
 {
     int i;
     int FIRST_SON = 0, SECOND_SON = 1;
+    int total_param;
 
     if (node == 0)
         return;
@@ -311,6 +342,16 @@ void check_and_set_declarations(AST *node)
 
         node->symbol->type = SYMBOL_VECTOR;
         node->symbol->is_context = FALSE;
+        node->symbol->vector_size = atoi(node->son[FIRST_SON]->symbol->text);
+
+        total_param = chech_vector_values(node);
+
+        if (total_param != -1)
+            if (total_param > node->symbol->vector_size)
+            {
+                fprintf(stderr, "Semantic ERROR: %s wait at most %d values, used %d\n", node->symbol->text, node->symbol->vector_size, total_param);
+                semanticErrors++;
+            }
         break;
 
     // case AST_declaracaoVariavel:
@@ -1001,7 +1042,7 @@ void check_arithmetic_expression(AST *node, int accept_bool, int accept_float, c
 
     if (node == 0)
         return;
-    // volta
+
     expr_check_operands(node, accept_bool, accept_float, function_call_name);
     expr_check_parenteses(node, accept_bool, accept_float, function_call_name);
     expr_check_function_call(node, accept_float, function_call_name);
@@ -1272,6 +1313,27 @@ void check_print(AST *node)
 }
 
 // **********************
+// Label
+// **********************
+
+void check_label(AST *node)
+{
+    if (node == 0)
+        return;
+
+    if (!(node->symbol->type == SYMBOL_LABLE))
+    {
+        fprintf(stderr, "Semantic ERROR: invalid LABEL\n");
+        semanticErrors++;
+    }
+}
+
+// Assinaturas
+
+void check_comando(AST *node);
+void check_comando_bloco(AST *node);
+
+// **********************
 // Goto
 // **********************
 
@@ -1302,25 +1364,54 @@ void check_goto(AST *node)
 }
 
 // **********************
-// Label
+// While
 // **********************
 
-void check_label(AST *node)
+void check_while(AST *node)
 {
+    int i, FIRST_SON = 0, SECOND_SON = 1;
+    int accept_bool = TRUE, accept_float = TRUE;
+
     if (node == 0)
         return;
 
-    if (!(node->symbol->type == SYMBOL_LABLE))
+    switch (node->type)
     {
-        fprintf(stderr, "Semantic ERROR: invalid LABEL\n");
-        semanticErrors++;
+    case AST_while:
+        check_arithmetic_expression(node->son[FIRST_SON], accept_bool, accept_float, "WHILE");
+        check_comando(node->son[SECOND_SON]);
+
+    default:
+        break;
     }
 }
 
-// Assinaturas
+// **********************
+// If
+// **********************
 
-void check_comando(AST *node);
-void check_comando_bloco(AST *node);
+void check_if(AST *node)
+{
+    int i, FIRST_SON = 0, SECOND_SON = 1, THIRD_SON = 2;
+    int accept_bool = TRUE, accept_float = TRUE;
+
+    if (node == 0)
+        return;
+
+    switch (node->type)
+    {
+    case AST_if:
+        check_arithmetic_expression(node->son[FIRST_SON], accept_bool, accept_float, "IF");
+        check_comando(node->son[SECOND_SON]);
+    case AST_ifElse:
+        check_arithmetic_expression(node->son[FIRST_SON], accept_bool, accept_float, "IF ELSE");
+        check_comando(node->son[SECOND_SON]);
+        check_comando(node->son[THIRD_SON]);
+
+    default:
+        break;
+    }
+}
 
 // **********************
 // Comando Simples
@@ -1333,6 +1424,9 @@ void check_comando_simples(AST *node)
 
     check_atrib(node);
     // check_controle_fluxo(node);
+    check_goto(node);
+    check_while(node);
+    check_if(node);
     check_print(node);
     check_return(node);
 }
@@ -1388,6 +1482,8 @@ void check_bloco(AST *node)
 
 void check_comando(AST *node)
 {
+    if (node == 0)
+        return;
     switch (node->type)
     {
     case AST_bloco:
@@ -1580,13 +1676,7 @@ void check_program(AST *node)
     pilha = malloc(sizeof(*pilha));
 
     check_and_set_declarations(node);
-    printf("\n");
-    // Retirar esse, verificação dentro das funções
-    // check_undeclared();
-    printf("\n");
-
     check_decl(node);
-    check_goto(node);
 
     printf("Semantic errors: %d\n", getSemanticErrors());
 }
