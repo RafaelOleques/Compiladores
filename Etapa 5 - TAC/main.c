@@ -4,6 +4,7 @@
 #include "hash.h"
 #include "descompilador.c"
 #include "semantic.h"
+#include "tacs.h"
 
 extern FILE *yyin;
 int yyparser();
@@ -57,6 +58,9 @@ int main(int argc, char *argv[])
 
     printf("\nHash Table:\n");
     hashPrint();
+
+    printf("\nTACS:\n");
+    tacPrintBackwards(generateCode(program_ast));
 
     if (getSemanticErrors() > 0)
         exit(4);
