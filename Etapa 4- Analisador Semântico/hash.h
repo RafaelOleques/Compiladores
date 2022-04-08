@@ -1,12 +1,11 @@
-//Autor: Rafael Oleques Nunes
+// Autor: Rafael Oleques Nunes
 
 #ifndef HASH_HEADER
 #define HASH_HEADER
 
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
-
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define HASH_SIZE 997
 
@@ -32,7 +31,7 @@ typedef struct funct_parameters
     int datatype;
     int type;
     char *text;
-    struct funct_parameters *next;    
+    struct funct_parameters *next;
 } FUNCT_PARAMETERS;
 
 typedef struct hash_node
@@ -40,12 +39,13 @@ typedef struct hash_node
     int type;
     int datatype;
     int datastruct;
-    float value; //variáveis
+    int value1; // variables
+    int value2; // float
     int vector_size;
     int is_context;
     FUNCT_PARAMETERS *parameters;
     char *text;
-    struct hash_node *next;    
+    struct hash_node *next;
 } HASH_NODE;
 
 void hashInit(void);
@@ -56,4 +56,3 @@ void hashPrint(void);
 int hash_check_undeclared(void);
 
 #endif
-

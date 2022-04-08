@@ -40,113 +40,141 @@ void set_datatype(AST *node)
     }
 }
 
-void set_function_parameters(AST *node, FUNCT_PARAMETERS **actual)
+FUNCT_PARAMETERS *set_function_parameters(AST *node)
 {
-    FUNCT_PARAMETERS parameters_aux;
+    FUNCT_PARAMETERS *first;
+    FUNCT_PARAMETERS *actual;
+
+    first = calloc(1, sizeof(FUNCT_PARAMETERS));
+    actual = first;
+
     if (node == 0)
-        return;
+    {
+        return NULL;
+    }
 
     int NEXT_PARAMETER = 0;
 
-    FUNCT_PARAMETERS *parameter_node = malloc(sizeof(*parameter_node));
-
-    switch (node->type)
+    while (node != 0)
     {
-    case AST_parametroEntradaIntMultiplo:
-        parameter_node->text = malloc(sizeof(parameter_node->text));
+        switch (node->type)
+        {
+        case AST_parametroEntradaIntMultiplo:
+            actual->text = (char *)calloc(1, strlen(node->symbol->text) + 1);
 
-        strcpy(parameter_node->text, node->symbol->text);
-        parameter_node->datatype = DATATYPE_INT;
+            strcpy(actual->text, node->symbol->text);
+            actual->datatype = DATATYPE_INT;
+            actual->type = SYMBOL_VARIABLE;
 
-        *actual = parameter_node;
+            node = node->son[NEXT_PARAMETER];
 
-        set_function_parameters(node->son[NEXT_PARAMETER], &((*actual)->next));
+            actual->next = calloc(1, sizeof(FUNCT_PARAMETERS));
+            actual = actual->next;
 
-        return;
+            break;
 
-    case AST_parametroEntradaCharMultiplo:
-        parameter_node->text = malloc(sizeof(parameter_node->text));
+        case AST_parametroEntradaCharMultiplo:
+            actual->text = (char *)calloc(1, strlen(node->symbol->text) + 1);
 
-        strcpy(parameter_node->text, node->symbol->text);
-        parameter_node->datatype = DATATYPE_CHAR;
+            strcpy(actual->text, node->symbol->text);
+            actual->datatype = DATATYPE_CHAR;
+            actual->type = SYMBOL_VARIABLE;
 
-        *actual = parameter_node;
+            node = node->son[NEXT_PARAMETER];
+            actual->next = calloc(1, sizeof(FUNCT_PARAMETERS));
+            actual = actual->next;
+            break;
 
-        set_function_parameters(node->son[NEXT_PARAMETER], &((*actual)->next));
+        case AST_parametroEntradaFloatMultiplo:
+            actual->text = (char *)calloc(1, strlen(node->symbol->text) + 1);
 
-        return;
+            strcpy(actual->text, node->symbol->text);
+            actual->datatype = DATATYPE_FLOAT;
+            actual->type = SYMBOL_VARIABLE;
 
-    case AST_parametroEntradaFloatMultiplo:
-        parameter_node->text = malloc(sizeof(parameter_node->text));
+            node = node->son[NEXT_PARAMETER];
+            actual->next = calloc(1, sizeof(FUNCT_PARAMETERS));
+            actual = actual->next;
+            break;
 
-        strcpy(parameter_node->text, node->symbol->text);
-        parameter_node->datatype = DATATYPE_FLOAT;
+        case AST_parametroEntradaInt:
+            actual->text = (char *)calloc(1, strlen(node->symbol->text) + 1);
 
-        *actual = parameter_node;
+            strcpy(actual->text, node->symbol->text);
+            actual->datatype = DATATYPE_INT;
+            actual->type = SYMBOL_VARIABLE;
 
-        set_function_parameters(node->son[NEXT_PARAMETER], &((*actual)->next));
+            node = node->son[NEXT_PARAMETER];
+            actual->next = NULL;
+            actual = actual->next;
 
-        return;
+            node = 0;
+            break;
 
-    case AST_parametroEntradaInt:
-        parameter_node->text = malloc(sizeof(parameter_node->text));
+        case AST_parametroEntradaChar:
+            actual->text = (char *)calloc(1, strlen(node->symbol->text) + 1);
 
-        strcpy(parameter_node->text, node->symbol->text);
-        parameter_node->datatype = DATATYPE_INT;
+            strcpy(actual->text, node->symbol->text);
+            actual->datatype = DATATYPE_CHAR;
+            actual->type = SYMBOL_VARIABLE;
 
-        *actual = parameter_node;
-        (*actual)->next = NULL;
+            node = node->son[NEXT_PARAMETER];
+            actual->next = NULL;
+            actual = actual->next;
 
-        return;
+            node = 0;
+            break;
 
-    case AST_parametroEntradaChar:
-        parameter_node->text = malloc(sizeof(parameter_node->text));
+        case AST_parametroEntradaFloat:
+            actual->text = (char *)calloc(1, strlen(node->symbol->text) + 1);
 
-        strcpy(parameter_node->text, node->symbol->text);
-        parameter_node->datatype = DATATYPE_CHAR;
+            strcpy(actual->text, node->symbol->text);
+            actual->datatype = DATATYPE_CHAR;
+            actual->type = SYMBOL_VARIABLE;
 
-        *actual = parameter_node;
-        (*actual)->next = NULL;
+            node = node->son[NEXT_PARAMETER];
+            actual->next = NULL;
+            actual = actual->next;
 
-        return;
+            node = 0;
+            break;
 
-    case AST_parametroEntradaFloat:
-        parameter_node->text = malloc(sizeof(parameter_node->text));
-
-        strcpy(parameter_node->text, node->symbol->text);
-        parameter_node->datatype = DATATYPE_FLOAT;
-
-        *actual = parameter_node;
-        (*actual)->next = NULL;
-
-        return;
-
-    default:
-        return;
+        default:
+            node = 0;
+            break;
+        }
     }
+
+    return first;
 }
 
-void set_function_cabecalho(AST *node)
+HASH_NODE *set_function_cabecalho(AST *node)
 {
+    HASH_NODE *node_symbol = node->symbol;
+
     int PARAMETERS = 0;
 
-    if (node->symbol)
-        if (node->symbol->type != SYMBOL_IDENTIFIER)
+    if (node_symbol)
+        if (node_symbol->type != SYMBOL_IDENTIFIER)
         {
             fprintf(stderr, "Semantic ERROR: %s are alredy declared, can't be used to FUNCTION NAME\n", node->symbol->text);
             semanticErrors++;
         }
 
-    node->symbol->type = SYMBOL_FUNCTION;
-    node->symbol->is_context = FALSE;
-    if( node->son[PARAMETERS])
+    node_symbol->type = SYMBOL_FUNCTION;
+    node_symbol->is_context = FALSE;
+    if (node->son[PARAMETERS])
         node->son[PARAMETERS]->symbol->parameters = NULL;
-    set_function_parameters(node->son[PARAMETERS], &(node->symbol->parameters));
+    node_symbol->parameters = set_function_parameters(node->son[PARAMETERS]);
+
+    return node_symbol;
 }
 
 void set_context(AST *node)
 {
     int i;
+    // voltar
+    // return;
     if (context == NULL)
         return;
 
@@ -199,6 +227,8 @@ void set_context(AST *node)
 void unset_context(AST *node)
 {
     int i;
+    // voltar
+    // return;
     if (original_context == NULL)
         return;
 
@@ -234,20 +264,22 @@ void unset_context(AST *node)
 
 void clear_context()
 {
+    // voltar
+
     FUNCT_PARAMETERS *i_original_context = original_context;
     FUNCT_PARAMETERS *i_context = context;
 
     while (i_original_context != NULL)
     {
-        free(i_original_context);
         original_context = original_context->next;
+        free(i_original_context);
         i_original_context = original_context;
     }
 
     while (i_context != NULL)
     {
-        free(i_context);
         context = context->next;
+        free(i_context);
         i_context = context;
     }
 }
@@ -265,17 +297,12 @@ void set_variable(AST *node)
     node->symbol->is_context = FALSE;
 }
 
-float set_variable_value(char *text)
+int set_variable_value(char *text)
 {
     if (text[0] == '\'')
         return text[1];
     else
         return atoi(text);
-}
-
-float set_variable_value_float(char *val1, char *val2)
-{
-    return set_variable_value(val1) / set_variable_value(val2);
 }
 
 int chech_vector_values_total(AST *node, int count)
@@ -308,14 +335,14 @@ int chech_vector_values(AST *node)
     return -1;
 }
 
-void check_and_set_declarations(AST *node)
+AST *check_and_set_declarations(AST *node)
 {
     int i;
     int FIRST_SON = 0, SECOND_SON = 1;
     int total_param;
 
     if (node == 0)
-        return;
+        return node;
 
     set_datatype(node);
 
@@ -325,7 +352,7 @@ void check_and_set_declarations(AST *node)
     case AST_cabecalhoFuncaoInt:
     case AST_cabecalhoFuncaoChar:
     case AST_cabecalhoFuncaoFloat:
-        set_function_cabecalho(node);
+        node->symbol = set_function_cabecalho(node);
         break;
 
     case AST_declaracaoVetorInt:
@@ -359,12 +386,13 @@ void check_and_set_declarations(AST *node)
     case AST_declaracaoVariavelInt:
     case AST_declaracaoVariavelChar:
         set_variable(node);
-        node->symbol->value = set_variable_value(node->son[FIRST_SON]->symbol->text);
+        node->symbol->value1 = set_variable_value(node->son[FIRST_SON]->symbol->text);
         break;
 
     case AST_declaracaoVariavelFloat:
         set_variable(node);
-        node->symbol->value = set_variable_value_float(node->son[FIRST_SON]->symbol->text, node->son[SECOND_SON]->symbol->text);
+        node->symbol->value1 = set_variable_value(node->son[FIRST_SON]->symbol->text);
+        node->symbol->value2 = set_variable_value(node->son[SECOND_SON]->symbol->text);
         break;
 
     case AST_label:
@@ -380,13 +408,14 @@ void check_and_set_declarations(AST *node)
 
     default:
         break;
-
     }
 
     for (i = 0; i < MAX_SONS; i++)
     {
-        check_and_set_declarations(node->son[i]);
+        node->son[i] = check_and_set_declarations(node->son[i]);
     }
+
+    return node;
 }
 
 void check_undeclared()
@@ -447,100 +476,6 @@ float processa_expr_pilha(pilha_aritmetica *cabecote)
     {
         return cabecote->valor;
     }
-}
-
-void gera_pilha(AST *node, int level, pilha_aritmetica *cabecote, int filho)
-{
-    int tipo, OPERANDO = 0;
-    int primeiro = 0, segundo = 1;
-    if (node == 0)
-        return;
-
-    int i;
-
-    for (i = 0; i < level; i++)
-        fprintf(stderr, "  ");
-
-    switch (node->type)
-    {
-    case AST_SYMBOL:
-    case AST_chamadaFuncao:
-    case AST_ADD:
-    case AST_SUB:
-    case AST_MULT:
-    case AST_DIV:
-        if (filho == 0)
-        {
-            cabecote->expr_esq = malloc(sizeof(*(cabecote->expr_esq)));
-            cabecote = cabecote->expr_esq;
-            printf("Esquerda! ");
-        }
-        else if (filho == 1)
-        {
-            cabecote->expr_dir = malloc(sizeof(*(cabecote->expr_dir)));
-            cabecote = cabecote->expr_dir;
-            printf("Direita! ");
-        }
-        break;
-    }
-
-
-    switch (node->type)
-    {
-    case AST_SYMBOL:
-        if (is_number(node->symbol->text, 0))
-        {
-            cabecote->valor = atoi(node->symbol->text);
-            cabecote->tipo = PILHA_VALOR;
-            printf("%f\n", cabecote->valor);
-        }
-        else
-        {
-            cabecote->valor = node->symbol->value;
-            cabecote->tipo = PILHA_VALOR;
-
-            printf("%f\n", cabecote->valor);
-        }
-        break;
-    case AST_chamadaFuncao:
-        fprintf(stderr, "AST_chamadaFuncao: ");
-
-        cabecote->valor = 0;
-        cabecote->tipo = PILHA_VALOR;
-
-        printf("%f\n", cabecote->valor);
-        return;
-        break;
-
-    case AST_ADD:
-        fprintf(stderr, "AST_ADD\n");
-        cabecote->tipo = PILHA_OPERADOR;
-        cabecote->operador = AST_ADD;
-        break;
-    case AST_SUB:
-        fprintf(stderr, "AST_SUB\n");
-        cabecote->tipo = PILHA_OPERADOR;
-        cabecote->operador = AST_SUB;
-        break;
-    case AST_MULT:
-        fprintf(stderr, "AST_MULT\n");
-        cabecote->tipo = PILHA_OPERADOR;
-        cabecote->operador = AST_MULT;
-        break;
-    case AST_DIV:
-        fprintf(stderr, "AST_DIV\n");
-        cabecote->tipo = PILHA_OPERADOR;
-        cabecote->operador = AST_DIV;
-        break;
-
-    default:
-        primeiro = 1;
-        segundo = 0;
-        printf("\n");
-    }
-
-    gera_pilha(node->son[0], level + 1, cabecote, primeiro);
-    gera_pilha(node->son[1], level + 2, cabecote, segundo);
 }
 
 // **********************
@@ -950,7 +885,6 @@ void atrib_variable(AST *node)
         fprintf(stderr, "Semantic ERROR: invalid right operand for VARIABLE ASSEGMENT\n");
     }
 
-
     check_arithmetic_expression(node->son[FIRST_OPERAND], accept_bool, accept_float, "VARIABLE VALUE");
 }
 
@@ -1058,7 +992,7 @@ void check_print_elemento(AST *node, int accept_bool, int accept_float)
             fprintf(stderr, "Semantic ERROR: invalid operand for PRINT\n");
             semanticErrors++;
         }
-        
+
         check_arithmetic_expression(node, accept_bool, accept_float, "PRINT");
         break;
     }
@@ -1372,7 +1306,8 @@ FUNCT_PARAMETERS *check_cabecalho_funcao(AST *node)
     if (node == 0)
         return NULL;
 
-    FUNCT_PARAMETERS *funct_context = NULL;
+    FUNCT_PARAMETERS *funct_context = calloc(1, sizeof(FUNCT_PARAMETERS));
+    FUNCT_PARAMETERS *first_funct_context = funct_context;
 
     int FIRST_SON = 0;
 
@@ -1387,15 +1322,36 @@ FUNCT_PARAMETERS *check_cabecalho_funcao(AST *node)
             semanticErrors++;
         }
         else
-            funct_context = node->symbol->parameters;
+        {
+            FUNCT_PARAMETERS *iterator;
 
+            if (node->symbol->parameters == NULL)
+                first_funct_context = NULL;
+
+            // Deep copy
+            for (iterator = node->symbol->parameters; iterator != NULL; iterator = iterator->next)
+            {
+                funct_context->datatype = iterator->datatype;
+                funct_context->type = iterator->type;
+
+                funct_context->text = (char *)calloc(1, strlen(iterator->text) + 1);
+                strcpy(funct_context->text, iterator->text);
+
+                if (iterator->next != NULL)
+                {
+                    funct_context->next = calloc(1, sizeof(FUNCT_PARAMETERS));
+                    funct_context = funct_context->next;
+                }
+                else
+                    funct_context->next = NULL;
+            }
+        }
         check_parametros_entrada(node->son[FIRST_SON]);
 
     default:
         break;
     }
-
-    return funct_context;
+    return first_funct_context;
 }
 
 // **********************
@@ -1458,12 +1414,10 @@ void check_decl(AST *node)
 
 void check_program(AST *node)
 {
-
-    pilha = malloc(sizeof(*pilha));
-    check_and_set_declarations(node);
+    node = check_and_set_declarations(node);
     check_decl(node);
 
-    printf("Semantic errors: %d\n", getSemanticErrors());
+    fprintf(stderr, "Semantic errors: %d\n", getSemanticErrors());
 }
 
 int getSemanticErrors()

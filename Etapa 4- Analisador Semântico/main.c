@@ -24,7 +24,7 @@ void openFile(int argc, char **argv)
 
     if (yyin == 0)
     {
-        printf("Erro ao abrir o arquivo!\n");
+        fprintf(stderr, "Erro ao abrir o arquivo!\n");
         exit(1);
     }
 }
@@ -41,21 +41,21 @@ int main(int argc, char *argv[])
 
     descompila(program_ast, argv[2]);
 
-    printf("\n");
-    printf("Main encerrada corretamente!\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Main encerrada corretamente!\n");
 
-    printf("\n");
-    printf("Lines: %d\n", getLineNumber());
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Lines: %d\n", getLineNumber());
 
     astPrint(program_ast, 0);
 
     // Semantic analyse
     
-    printf("\n");
+    fprintf(stderr, "\n");
     check_program(program_ast);
-    printf("\n");
+    fprintf(stderr, "\n");
 
-    printf("\nHash Table:\n");
+    fprintf(stderr, "\nHash Table:\n");
     hashPrint();
 
     if (getSemanticErrors() > 0)

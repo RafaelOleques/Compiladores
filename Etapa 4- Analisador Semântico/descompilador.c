@@ -13,7 +13,7 @@ void descompila(AST *node, char *fileName)
 
     if (file == NULL)
     {
-        printf("Erro no arquivo de saida!");
+        fprintf(stderr, "Erro no arquivo de saida!");
         exit(1);
     }
 

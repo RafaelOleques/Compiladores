@@ -23,8 +23,6 @@ typedef struct pilha_aritmetica
 
 extern int semanticErrors;
 
-void check_and_set_declarations(AST *node);
-void check_undeclared();
 void check_program(AST *node);
 
 int getSemanticErrors();

@@ -60,22 +60,22 @@ void print_function_parameters(FUNCT_PARAMETERS *parameters)
     if (parameters == NULL)
         return;
 
-    printf("\t%s: ", parameters->text);
+    fprintf(stderr, "\t%s: ", parameters->text);
 
     switch (parameters->datatype)
     {
     case DATATYPE_CHAR:
-        printf("CHAR\n");
+        fprintf(stderr, "CHAR\n");
         break;
     case DATATYPE_FLOAT:
-        printf("FLOAT\n");
+        fprintf(stderr, "FLOAT\n");
         break;
     case DATATYPE_INT:
-        printf("INT\n");
+        fprintf(stderr, "INT\n");
         break;
 
     default:
-    printf("LOST, EVERTHING IS LOST!\n");
+        fprintf(stderr, "TYPE ERROR!\n");
         break;
     }
 
@@ -89,75 +89,82 @@ void hashPrint(void)
     for (i = 0; i < HASH_SIZE; i++)
         for (node = table[i]; node; node = node->next)
         {
-            printf("Table[%d] has %s with type ", i, node->text);
+            fprintf(stderr, "Table[%d] has %s with type ", i, node->text);
 
             switch (node->type)
             {
             case SYMBOL_IDENTIFIER:
-                printf("SYMBOL_IDENTIFIER");
+                fprintf(stderr, "SYMBOL_IDENTIFIER");
                 break;
             case SYMBOL_LIT_INT:
-                printf("SYMBOL_LIT_INT");
+                fprintf(stderr, "SYMBOL_LIT_INT");
                 break;
             case SYMBOL_LIT_STRING:
-                printf("SYMBOL_LIT_STRING");
+                fprintf(stderr, "SYMBOL_LIT_STRING");
                 break;
             case SYMBOL_LIT_CHAR:
-                printf("SYMBOL_LIT_CHAR");
+                fprintf(stderr, "SYMBOL_LIT_CHAR");
                 break;
             case SYMBOL_TRUE:
-                printf("SYMBOL_TRUE");
+                fprintf(stderr, "SYMBOL_TRUE");
                 break;
             case SYMBOL_FALSE:
-                printf("SYMBOL_FALSE");
+                fprintf(stderr, "SYMBOL_FALSE");
                 break;
             case SYMBOL_VARIABLE:
-                printf("SYMBOL_VARIABLE and value: %f", node->value);
+                fprintf(stderr, "SYMBOL_VARIABLE and value: %d", node->value1);
+                if(node->value2)
+                    fprintf(stderr, "/%d", node->value2);
                 break;
             case SYMBOL_FUNCTION:
-                printf("SYMBOL_FUNCTION ");
+                fprintf(stderr, "SYMBOL_FUNCTION ");
                 switch (node->datatype)
                 {
                 case DATATYPE_CHAR:
-                    printf("CHAR");
+                    fprintf(stderr, "CHAR");
                     break;
                 case DATATYPE_FLOAT:
-                    printf("FLOAT");
+                    fprintf(stderr, "FLOAT");
                     break;
                 case DATATYPE_INT:
-                    printf("INT");
+                    fprintf(stderr, "INT");
                     break;
                 default:
                     break;
                 }
-                printf(" and parameters:\n");
-                print_function_parameters(node->parameters);
+
+                if (node->parameters)
+                {
+                    fprintf(stderr, " and parameters:\n");
+                    print_function_parameters(node->parameters);
+                }
+
                 break;
             case SYMBOL_VECTOR:
-                printf("SYMBOL_VECTOR");
+                fprintf(stderr, "SYMBOL_VECTOR");
                 break;
             case SYMBOL_LIT_FLOAT:
-                printf("SYMBOL_LIT_FLOAT");
+                fprintf(stderr, "SYMBOL_LIT_FLOAT");
                 break;
             default:
-                printf("%d", node->type);
+                fprintf(stderr, "%d", node->type);
             }
 
             if (node->type != SYMBOL_FUNCTION)
                 switch (node->datatype)
                 {
                 case DATATYPE_CHAR:
-                    printf(" CHAR");
+                    fprintf(stderr, " CHAR");
                     break;
                 case DATATYPE_FLOAT:
-                    printf(" FLOAT");
+                    fprintf(stderr, " FLOAT");
                     break;
                 case DATATYPE_INT:
-                    printf(" INT");
+                    fprintf(stderr, " INT");
                     break;
                 }
 
-            printf("\n");
+            fprintf(stderr, "\n");
         }
 }
 
@@ -178,31 +185,4 @@ int hash_check_undeclared()
         }
 
     return undedeclared;
-}
-
-HASH_NODE *makeTemp()
-{
-    static int serial = 0;
-    char buffer[256] = "";
-
-    sprintf(buffer, "TEMP%d", serial++);
-    return hashInsert(buffer, SYMBOL_VARIABLE);
-}
-
-HASH_NODE *makeLabel()
-{
-    static int serial = 0;
-    char buffer[256] = "";
-
-    sprintf(buffer, "LABEL%d", serial++);
-    return hashInsert(buffer, SYMBOL_LABLE_JFALSE);
-}
-
-HASH_NODE *makerReadValue()
-{
-    static int serial = 0;
-    char buffer[256] = "";
-
-    sprintf(buffer, "READVALUE%d", serial++);
-    return hashInsert(buffer, SYMBOL_LIT_INT);
 }

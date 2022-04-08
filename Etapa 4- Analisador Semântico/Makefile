@@ -26,4 +26,4 @@ lex.yy.c: scanner.l
 	flex scanner.l
 
 clean:
-	rm lex.yy.c parser.tab.c *.o etapa4
+	rm lex.yy.c parser.tab.c parser.tab.h *.o etapa4
