@@ -21,6 +21,8 @@
 #define SYMBOL_LIT_FLOAT 10
 #define SYMBOL_LABLE 11
 
+#define SYMBOL_LABLE_JFALSE 12
+
 #define DATATYPE_INVALID -1
 #define DATATYPE_INT 1
 #define DATATYPE_CHAR 2
@@ -54,5 +56,8 @@ HASH_NODE *hashFind(char *text);
 HASH_NODE *hashInsert(char *text, int type);
 void hashPrint(void);
 int hash_check_undeclared(void);
+
+HASH_NODE *makeTemp();
+HASH_NODE *makeLabel();
 
 #endif

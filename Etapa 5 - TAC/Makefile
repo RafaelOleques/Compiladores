@@ -28,11 +28,5 @@ lex.yy.o: lex.yy.c
 lex.yy.c: scanner.l 
 	flex scanner.l
 
-clean_professor:
-	rm lex.yy.c parser.tab.c *.o etapa5
-
 clean:
-	del /f lex.yy.c 
-	del /f parser.tab.c 
-	del /f *.o 
-	del /f etapa5.exe
+	rm lex.yy.c parser.tab.c parser.tab.h *.o etapa5

@@ -21,16 +21,13 @@ void tacPrint(TAC *tac)
         return;
 
     if (tac->type == TAC_SYMBOL || tac->type == TAC_declaracaoVariavelFloatLiteral ||
-        tac->type == TAC_declaracaoVariavelGeral || tac->type == TAC_tamVetor)
+        tac->type == TAC_declaracaoVariavelGeral || tac->type == TAC_tamVetor || tac->type == TAC_declaracaoVariavel)
         return;
 
     fprintf(stderr, "TAC(");
 
     switch (tac->type)
     {
-    /*case TAC_SYMBOL:
-        fprintf(stderr, "TAC_SYMBOL");
-        break;*/
     case TAC_ADD:
         fprintf(stderr, "TAC_ADD");
         break;
@@ -114,6 +111,34 @@ void tacPrint(TAC *tac)
         fprintf(stderr, "TAC_PRINTELEMENTOS");
         break;
 
+    case TAC_GOTO:
+        fprintf(stderr, "TAC_GOTO");
+        break;
+
+    case TAC_CALLFUNCT:
+        fprintf(stderr, "TAC_CALLFUNCT");
+        break;
+
+    case TAC_PARAMETROSENTRADA:
+        fprintf(stderr, "TAC_PARAMETROSENTRADA");
+        break;
+
+    case TAC_BEGINFUNT:
+        fprintf(stderr, "TAC_BEGINFUNT");
+        break;
+
+    case TAC_ENDFUNCT:
+        fprintf(stderr, "TAC_ENDFUNCT");
+        break;
+
+    case TAC_atribuicao_vector:
+        fprintf(stderr, "TAC_atribuicao_vector");
+        break;
+    
+    case TAC_VECTOR:
+        fprintf(stderr, "TAC_VECTOR");
+        break;
+
     default:
         fprintf(stderr, "TAC_UNKNOWN");
         break;
@@ -155,10 +180,14 @@ TAC *tacJoin(TAC *l1, TAC *l2)
 // CODE GENERATION
 
 TAC *makeIf(TAC *condition, TAC *codeToExecute_ifTrue);
+TAC *makeWhile(TAC *condition, TAC *codeToExecute_ifTrue);
+
+TAC *makeIfElse(TAC *condition, TAC *codeToExecute_ifTrue, TAC *codeToExecute_ifTFalse);
 TAC *makeOperation(int operation, TAC *val1, TAC *val2);
 TAC *makeDeclaracaoVariavelInt(int type, HASH_NODE *var, TAC *val);
 TAC *makeAtribuicaoVetor(int operation, TAC *val1, TAC *val2);
 TAC *makePrintElementos(TAC *val1, TAC *val2);
+TAC *makeParametrosEntrada(TAC *val1, TAC *val2);
 
 TAC *generateCode(AST *node)
 {
@@ -237,8 +266,16 @@ TAC *generateCode(AST *node)
         result = makeIf(code[0], code[1]);
         break;
 
+    case AST_ifElse:
+        result = makeIfElse(code[0], code[1], code[2]);
+        break;
+
+    case AST_while:
+        result = makeWhile(code[0], code[1]);
+        break;
+
     case AST_READ:
-        result = tacCreate(TAC_READ, makerReadValue(), 0, 0);
+        result = tacCreate(TAC_READ, makeTemp(), 0, 0);
         break;
 
     case AST_declaracaoVariavel:
@@ -304,6 +341,35 @@ TAC *generateCode(AST *node)
                          tacCreate(TAC_PRINT, code[0] ? code[0]->res : 0, 0, 0));
         break;
 
+    case AST_chamadaParametroEntrada:
+        result = makeParametrosEntrada(code[0], code[1]);
+        break;
+
+    case AST_chamadaFuncao:
+        result = tacJoin(code[1],
+                         tacCreate(TAC_CALLFUNCT, makeTemp(), node->symbol, code[1] ? code[1]->res : 0));
+        break;
+
+    case AST_declaracaoFuncao:
+        result = tacJoin(tacJoin(tacCreate(TAC_BEGINFUNT, node->son[0]->symbol, 0, 0), code[1]), tacCreate(TAC_ENDFUNCT, 0, 0, 0));
+        break;
+
+    case AST_label:
+        result = tacCreate(TAC_LABEL, node->symbol, 0, 0);
+        break;
+
+    case AST_goto:
+        result = tacCreate(TAC_GOTO, node->symbol, 0, 0);
+        break;
+
+    case AST_atribuicao_vector:
+        result = tacCreate(TAC_atribuicao_vector, node->symbol, node->son[0]->symbol, node->son[1]->symbol);
+        break;
+
+    case AST_VECTOR:
+        result = tacCreate(TAC_VECTOR, makeTemp(), node->symbol, code[0]? code[0]->res : 0);
+        break;
+
     default:
         // return the union of code for all childrens (subtrees)
         result = tacJoin(code[0], tacJoin(code[1], tacJoin(code[2], code[3])));
@@ -338,6 +404,15 @@ TAC *makePrintElementos(TAC *val1, TAC *val2)
                              val2 ? val2->res : 0)); // Op2
 }
 
+TAC *makeParametrosEntrada(TAC *val1, TAC *val2)
+{
+    return tacJoin(tacJoin(val1, val2),
+                   tacCreate(TAC_PARAMETROSENTRADA,
+                             makeTemp(),             // Result
+                             val1 ? val1->res : 0,   // Op1
+                             val2 ? val2->res : 0)); // Op2
+}
+
 TAC *makeAtribuicaoVetor(int operation, TAC *val1, TAC *val2)
 {
     return tacJoin(tacJoin(val1, val2),
@@ -355,10 +430,40 @@ TAC *makeIf(TAC *condition, TAC *codeToExecute_ifTrue)
 
     newLabel = makeLabel();
 
-    jumpTac = tacCreate(TAC_JFALSE, newLabel, condition ? condition->res : 0, 0);
-    jumpTac->prev = condition;
-    labelTac = tacCreate(TAC_LABEL, newLabel, 0, 0);
-    labelTac->prev = codeToExecute_ifTrue;
+    jumpTac = tacJoin(condition, tacCreate(TAC_JFALSE, newLabel, condition ? condition->res : 0, 0));
+    labelTac = tacJoin(codeToExecute_ifTrue, tacCreate(TAC_LABEL, newLabel, 0, 0));
 
     return tacJoin(jumpTac, labelTac);
+}
+
+TAC *makeWhile(TAC *condition, TAC *codeToExecute_ifTrue)
+{
+    TAC *jumpTac = 0;
+    TAC *labelTac = 0;
+    HASH_NODE *labelBegin = 0;
+    HASH_NODE *labelEnd = 0;
+
+    labelBegin = makeLabel();
+    labelEnd = makeLabel();
+
+    jumpTac = tacJoin(tacCreate(TAC_LABEL, labelBegin, 0, 0), tacJoin(condition, tacCreate(TAC_JFALSE, labelEnd, condition ? condition->res : 0, 0)));
+    labelTac = tacJoin(codeToExecute_ifTrue, tacCreate(TAC_GOTO, labelBegin, 0, 0));
+
+    return tacJoin(tacJoin(jumpTac, labelTac), tacCreate(TAC_LABEL, labelEnd, 0, 0));
+}
+
+TAC *makeIfElse(TAC *condition, TAC *codeToExecute_ifTrue, TAC *codeToExecute_ifFalse)
+{
+    TAC *jumpTac = 0;
+    TAC *labelTac = 0;
+    TAC *codeTrue = 0;
+    HASH_NODE *newLabel = 0;
+
+    newLabel = makeLabel();
+
+    jumpTac = tacJoin(condition, tacCreate(TAC_JFALSE, newLabel, condition ? condition->res : 0, 0));
+    labelTac = tacJoin(codeToExecute_ifTrue, tacCreate(TAC_LABEL, newLabel, 0, 0));
+    codeTrue = tacJoin(jumpTac, labelTac);
+
+    return tacJoin(codeTrue, codeToExecute_ifFalse);
 }

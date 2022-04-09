@@ -38,6 +38,17 @@
 #define TAC_PRINTELEMENTOS 24
 #define TAC_PRINT 25
 
+#define TAC_GOTO 26
+
+#define TAC_PARAMETROSENTRADA 27
+#define TAC_CALLFUNCT 28
+#define TAC_BEGINFUNT 29
+#define TAC_ENDFUNCT 30
+
+#define TAC_atribuicao_vector 31
+#define TAC_VECTOR 32
+
+
 
 typedef struct tac_node
 {

@@ -186,3 +186,21 @@ int hash_check_undeclared()
 
     return undedeclared;
 }
+
+HASH_NODE *makeTemp()
+{
+    static int serial = 0;
+    char buffer[256] = "";
+
+    sprintf(buffer, "TEMP%d", serial++);
+    return hashInsert(buffer, SYMBOL_VARIABLE);
+}
+
+HASH_NODE *makeLabel()
+{
+    static int serial = 0;
+    char buffer[256] = "";
+
+    sprintf(buffer, "LABEL%d", serial++);
+    return hashInsert(buffer, SYMBOL_LABLE_JFALSE);
+}

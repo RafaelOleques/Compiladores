@@ -1,7 +1,7 @@
 %{
     #include "ast.h"
     #include "hash.h"
-    
+
     int yyerror(char*);
     int getLineNumber();
     int yylex();
@@ -26,25 +26,25 @@
 %token KW_GOTO
 %token KW_READ
 %token KW_PRINT
-%token KW_RETURN   
+%token KW_RETURN
 
-%token OPERATOR_LE 
-%token OPERATOR_GE 
-%token OPERATOR_EQ 
+%token OPERATOR_LE
+%token OPERATOR_GE
+%token OPERATOR_EQ
 %token OPERATOR_DIF
 
 %token<symbol> TK_IDENTIFIER
 
-%token<symbol> LIT_INTEGER 
+%token<symbol> LIT_INTEGER
 %token<symbol> LIT_CHAR
-%token<symbol> LIT_STRING  
+%token<symbol> LIT_STRING
 
 
 %token TOKEN_ERROR
 
 %type<ast> exprAritmetica
 %type<ast> expressaoFolha
-%type<ast> chamadaFuncao 
+%type<ast> chamadaFuncao
 %type<ast> chamadaParametrosEntrada
 %type<ast> chamadaParametroEntrada
 %type<ast> atribuicao
@@ -80,12 +80,12 @@
 programa:
     decl                                           {
                                                         program_ast = $$;
-                                                    } 
+                                                    }
     ;
 
-decl: 
-    declaracaoFuncao decl                          {$$ = astCreate(AST_decl, 0, $1, $2, 0, 0);}  
-    | declaracaoVariavel ';' decl                  {$$ = astCreate(AST_declPV, 0, $1, $3, 0, 0);} 
+decl:
+    declaracaoFuncao decl                          {$$ = astCreate(AST_decl, 0, $1, $2, 0, 0);}
+    | declaracaoVariavel ';' decl                  {$$ = astCreate(AST_declPV, 0, $1, $3, 0, 0);}
     |                                              {$$ = 0;}
     ;
 
@@ -96,28 +96,28 @@ decl:
 declaracaoVariavel:
     KW_INT TK_IDENTIFIER ':' inicializacao                      {
                                                                     $$ = astCreate(
-                                                                    AST_declaracaoVariavel, 
-                                                                    0, 
-                                                                    astCreate(AST_declaracaoVariavelInt, $2, $4, 0, 0, 0), 
+                                                                    AST_declaracaoVariavel,
+                                                                    0,
+                                                                    astCreate(AST_declaracaoVariavelInt, $2, $4, 0, 0, 0),
                                                                     0, 0, 0);
                                                                 }
     | KW_CHAR TK_IDENTIFIER ':' inicializacao                   {
                                                                     $$ = astCreate(
-                                                                    AST_declaracaoVariavel, 
-                                                                    0, 
-                                                                    astCreate(AST_declaracaoVariavelChar, $2, $4, 0, 0, 0), 
+                                                                    AST_declaracaoVariavel,
+                                                                    0,
+                                                                    astCreate(AST_declaracaoVariavelChar, $2, $4, 0, 0, 0),
                                                                     0, 0, 0);
                                                                 }
     | KW_FLOAT TK_IDENTIFIER ':' LIT_INTEGER '/' LIT_INTEGER    {
                                                                     $$ = astCreate(
-                                                                    AST_declaracaoVariavel, 
-                                                                    0, 
+                                                                    AST_declaracaoVariavel,
+                                                                    0,
                                                                     astCreate(
-                                                                        AST_declaracaoVariavelFloat, 
-                                                                        $2, 
-                                                                        astCreate(AST_declaracaoVariavelFloatLiteral, $4, 0, 0, 0, 0), 
+                                                                        AST_declaracaoVariavelFloat,
+                                                                        $2,
+                                                                        astCreate(AST_declaracaoVariavelFloatLiteral, $4, 0, 0, 0, 0),
                                                                         astCreate(AST_declaracaoVariavelFloatLiteral, $6, 0, 0, 0, 0),
-                                                                         0, 0), 
+                                                                         0, 0),
                                                                     0, 0, 0);
                                                                 }
     | declaracaoVetor                                           {$$ = astCreate(AST_declaracaoVariavel, 0, $1, 0, 0, 0);}
@@ -158,7 +158,7 @@ cabecalhoFuncao:
 
 parametrosEntrada:
     parametroEntrada
-    |                       {$$ = 0}
+    |                       {$$ = 0;}
     ;
 
 parametroEntrada:
@@ -182,8 +182,8 @@ comandoBloco:
     comando ';' comandoBloco    {$$ = astCreate(AST_comandoBloco, 0, $1, $3, 0, 0);}
     | comando ';'               {$$ = astCreate(AST_comandoBloco, 0, $1, 0, 0, 0);}
     | label comandoBloco        {$$ = astCreate(AST_comandoBloco_label, 0, $1, $2, 0, 0);}
-    | label                     
-    |                           {$$ = 0}
+    | label
+    |                           {$$ = 0;}
     ;
 
 label:
@@ -198,7 +198,7 @@ comando:
 
 comandoSimples:
     atribuicao
-    | controleFluxo 
+    | controleFluxo
     | print
     | return
     |                   {$$ = 0;}
@@ -219,7 +219,7 @@ print:
 
 printElementos:
     printElemento ',' printElementos  {$$ = astCreate(AST_printElementos, 0, $1, $3, 0, 0);}
-    | printElemento                   
+    | printElemento
     ;
 
 printElemento:
@@ -238,21 +238,21 @@ return:
     Expressao Aritmetica
 */
 exprAritmetica:
-    expressaoFolha                                   
-    | chamadaFuncao                                            
-    | KW_READ                                       {$$ = astCreate(AST_READ, 0, 0, 0, 0, 0);}          
-    | '(' exprAritmetica ')'                        {$$ = astCreate(AST_EXPR_PARENTESES, 0, $2, 0, 0, 0);}  
-    | exprAritmetica '+' exprAritmetica             {$$ = astCreate(AST_ADD, 0, $1, $3, 0, 0);}   
-    | exprAritmetica '-' exprAritmetica             {$$ = astCreate(AST_SUB, 0, $1, $3, 0, 0);}     
-    | exprAritmetica '*' exprAritmetica             {$$ = astCreate(AST_MULT, 0, $1, $3, 0, 0);}      
-    | exprAritmetica '/' exprAritmetica             {$$ = astCreate(AST_DIV, 0, $1, $3, 0, 0);}     
-    | exprAritmetica '<' exprAritmetica             {$$ = astCreate(AST_LESS, 0, $1, $3, 0, 0);}  
-    | exprAritmetica '>' exprAritmetica             {$$ = astCreate(AST_GREATER, 0, $1, $3, 0, 0);}  
-    | exprAritmetica OPERATOR_LE exprAritmetica     {$$ = astCreate(AST_LE, 0, $1, $3, 0, 0);}  
-    | exprAritmetica OPERATOR_GE exprAritmetica     {$$ = astCreate(AST_GE, 0, $1, $3, 0, 0);}  
-    | exprAritmetica OPERATOR_EQ exprAritmetica     {$$ = astCreate(AST_EQ, 0, $1, $3, 0, 0);}  
-    | exprAritmetica OPERATOR_DIF exprAritmetica    {$$ = astCreate(AST_DIF, 0, $1, $3, 0, 0);}  
-    ;    
+    expressaoFolha
+    | chamadaFuncao
+    | KW_READ                                       {$$ = astCreate(AST_READ, 0, 0, 0, 0, 0);}
+    | '(' exprAritmetica ')'                        {$$ = astCreate(AST_EXPR_PARENTESES, 0, $2, 0, 0, 0);}
+    | exprAritmetica '+' exprAritmetica             {$$ = astCreate(AST_ADD, 0, $1, $3, 0, 0);}
+    | exprAritmetica '-' exprAritmetica             {$$ = astCreate(AST_SUB, 0, $1, $3, 0, 0);}
+    | exprAritmetica '*' exprAritmetica             {$$ = astCreate(AST_MULT, 0, $1, $3, 0, 0);}
+    | exprAritmetica '/' exprAritmetica             {$$ = astCreate(AST_DIV, 0, $1, $3, 0, 0);}
+    | exprAritmetica '<' exprAritmetica             {$$ = astCreate(AST_LESS, 0, $1, $3, 0, 0);}
+    | exprAritmetica '>' exprAritmetica             {$$ = astCreate(AST_GREATER, 0, $1, $3, 0, 0);}
+    | exprAritmetica OPERATOR_LE exprAritmetica     {$$ = astCreate(AST_LE, 0, $1, $3, 0, 0);}
+    | exprAritmetica OPERATOR_GE exprAritmetica     {$$ = astCreate(AST_GE, 0, $1, $3, 0, 0);}
+    | exprAritmetica OPERATOR_EQ exprAritmetica     {$$ = astCreate(AST_EQ, 0, $1, $3, 0, 0);}
+    | exprAritmetica OPERATOR_DIF exprAritmetica    {$$ = astCreate(AST_DIF, 0, $1, $3, 0, 0);}
+    ;
 
 chamadaFuncao:
     TK_IDENTIFIER '(' chamadaParametrosEntrada ')'  {$$ = astCreate(AST_chamadaFuncao, $1, 0, $3, 0, 0);}
@@ -265,14 +265,14 @@ chamadaParametrosEntrada:
 
 chamadaParametroEntrada:
     exprAritmetica ',' chamadaParametroEntrada     {$$ = astCreate(AST_chamadaParametroEntrada, 0, $1, $3, 0, 0);}
-    | exprAritmetica                               
+    | exprAritmetica
     ;
 
 
 expressaoFolha:
-    TK_IDENTIFIER                                   {$$ = astCreate(AST_SYMBOL, $1, 0, 0, 0, 0);}        
-    | TK_IDENTIFIER '[' exprAritmetica ']'          {$$ = astCreate(AST_VECTOR, $1, $3, 0, 0, 0);}  
-    | LIT_INTEGER                                   {$$ = astCreate(AST_SYMBOL, $1, 0, 0, 0, 0);}    
+    TK_IDENTIFIER                                   {$$ = astCreate(AST_SYMBOL, $1, 0, 0, 0, 0);}
+    | TK_IDENTIFIER '[' exprAritmetica ']'          {$$ = astCreate(AST_VECTOR, $1, $3, 0, 0, 0);}
+    | LIT_INTEGER                                   {$$ = astCreate(AST_SYMBOL, $1, 0, 0, 0, 0);}
     | LIT_CHAR                                      {$$ = astCreate(AST_SYMBOL, $1, 0, 0, 0, 0);}
     ;
 
